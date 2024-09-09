@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+  e0-api:
+    image: api:latest
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    ports:
+      - "8001-8003:8000"
+    depends_on:
+      - e0-database
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@e0-database:5432/${POSTGRES_DB}
+      POST_TOKEN: ${POST_TOKEN}
+    deploy:
+      replicas: 3
+      restart_policy:
+        condition: on-failure
+
+  e0-mqtt:
+    image: mqtt:latest
+    build:
+      context: ./mqtt
+      dockerfile: Dockerfile
+    depends_on:
+      - e0-api
+    environment:
+      HOST: ${MQTT_HOST}
+      PORT: ${MQTT_PORT}
+      USER: ${MQTT_USER}
+      PASSWORD: ${MQTT_PASSWORD}
+      POST_TOKEN: ${POST_TOKEN}
+
+  e0-database:
+    image: postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+
+volumes:
+  db_data:
