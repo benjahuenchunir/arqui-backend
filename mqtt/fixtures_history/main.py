@@ -34,7 +34,7 @@ else:
 def on_connect(client, userdata, flags, reason_code, properties):
     """Callback for when the client receives a CONNACK response from the server."""
     logging.info("Connected with result code %s", str(reason_code))
-    client.subscribe("fixtures/info")
+    client.subscribe(os.getenv("TOPIC"))
 
 
 def on_message(client, userdata, msg):
@@ -46,7 +46,7 @@ def on_message(client, userdata, msg):
         logging.info("Processing match %s of %s", str(i + 1), str(len(matches)))
         try:
             requests.post(
-                "http://e0-api:8000/fixtures",
+                os.getenv("API_URL"),
                 json=match,
                 headers={"Authorization": f"Bearer {POST_TOKEN}"},
                 timeout=5,

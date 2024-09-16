@@ -1,7 +1,7 @@
 version: '3.8'
 
 services:
-  e0-api:
+  api:
     image: api:latest
     build:
       context: ./api
@@ -9,30 +9,80 @@ services:
     ports:
       - "8001-8003:8000"
     depends_on:
-      - e0-database
+      - db
     environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@e0-database:5432/${POSTGRES_DB}
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
       POST_TOKEN: ${POST_TOKEN}
     deploy:
       replicas: 3
       restart_policy:
         condition: on-failure
 
-  e0-mqtt:
-    image: mqtt:latest
+  fixtures:_info:
+    image: fixtures_info:latest
     build:
-      context: ./mqtt
+      context: ./mqtt/fixtures_info
       dockerfile: Dockerfile
     depends_on:
-      - e0-api
+      - api
     environment:
       HOST: ${MQTT_HOST}
       PORT: ${MQTT_PORT}
       USER: ${MQTT_USER}
       PASSWORD: ${MQTT_PASSWORD}
+      TOPIC: ${FIXTURES_INFO_TOPIC}
       POST_TOKEN: ${POST_TOKEN}
+      API_URL: ${FIXTURES_INFO_URL}
 
-  e0-database:
+  fixtures_requests:
+    image: fixtures_requests:latest
+    build:
+      context: ./mqtt/fixtures_requests
+      dockerfile: Dockerfile
+    depends_on:
+      - api
+    environment:
+      HOST: ${MQTT_HOST}
+      PORT: ${MQTT_PORT}
+      USER: ${MQTT_USER}
+      PASSWORD: ${MQTT_PASSWORD}
+      TOPIC: ${FIXTURES_REQUESTS_TOPIC}
+      POST_TOKEN: ${POST_TOKEN}
+      API_URL: ${FIXTURES_REQUESTS_URL}
+
+  fixtures_validation:
+    image: fixtures_validation:latest
+    build:
+      context: ./mqtt/fixtures_validation
+      dockerfile: Dockerfile
+    depends_on:
+      - api
+    environment:
+      HOST: ${MQTT_HOST}
+      PORT: ${MQTT_PORT}
+      USER: ${MQTT_USER}
+      PASSWORD: ${MQTT_PASSWORD}
+      TOPIC: ${FIXTURES_VALIDATION_TOPIC}
+      POST_TOKEN: ${POST_TOKEN}
+      API_URL: ${FIXTURES_VALIDATION_URL}
+
+  fixtures_history:
+    image: fixtures_history:latest
+    build:
+      context: ./mqtt/fixtures_history
+      dockerfile: Dockerfile
+    depends_on:
+      - api
+    environment:
+      HOST: ${MQTT_HOST}
+      PORT: ${MQTT_PORT}
+      USER: ${MQTT_USER}
+      PASSWORD: ${MQTT_PASSWORD}
+      TOPIC: ${FIXTURES_HISTORY_TOPIC}
+      POST_TOKEN: ${POST_TOKEN}
+      API_URL: ${FIXTURES_HISTORY_URL}
+
+  db:
     image: postgres
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
