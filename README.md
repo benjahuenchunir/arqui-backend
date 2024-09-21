@@ -12,3 +12,7 @@ _"...the Warp Trotter "[Numby](https://honkai-star-rail.fandom.com/wiki/Topaz_an
 - Se definio el atributo ```flag``` de ```league``` como ```<string|null>``` para ajustrse a los nuevos partidos del ```02/09/2024```.
 - El endpoint ```/fixtures{:identifier}``` utiliza el ```id``` del _nested object_ ```fixtures``` para identificar los partidos.
 - El parámetro ```page``` en el endpoint ```/fixtures``` comienza desde ```0```.
+
+# ER-Model
+
+![Modelo ER](docs/ER-Model.png)
