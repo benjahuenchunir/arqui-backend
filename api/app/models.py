@@ -1,38 +1,16 @@
 """SQLAlchemy models for the database."""
 
 from sqlalchemy import (
-    Boolean,
     Column,
     DateTime,
     Float,
     ForeignKey,
-    ForeignKeyConstraint,
     Integer,
-    PrimaryKeyConstraint,
     String,
 )
 from sqlalchemy.orm import relationship
 
 from .database import Base
-
-
-class StatusModel(Base):
-    """Base class for fixture status."""
-
-    __tablename__ = "status"
-
-    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    long = Column(String)
-    short = Column(String)
-    elapsed = Column(Integer, nullable=True)
-
-    fixture_id = Column(Integer, ForeignKey("fixtures.id"))
-    fixture = relationship(
-        "FixtureModel",
-        uselist=False,
-        back_populates="status",
-    )
-
 
 class FixtureModel(Base):
     """Base class for fixtures."""
@@ -40,24 +18,31 @@ class FixtureModel(Base):
     __tablename__ = "fixtures"
 
     id = Column(Integer, primary_key=True, index=True)
-    referee = Column(String, nullable=True)
-    timezone = Column(String)
+    referee = Column(String(255), nullable=True)
+    timezone = Column(String(255))
     date = Column(DateTime)
     timestamp = Column(Integer)
-    status = relationship(
-        "StatusModel",
-        uselist=False,
-        back_populates="fixture",
-        cascade="all, delete-orphan",
+    status_long = Column(String(255))
+    status_short = Column(String(255))
+    status_elapsed = Column(Integer, nullable=True)
+    id_league = Column(Integer, ForeignKey("leagues.id"))
+    id_home_team = Column(Integer, ForeignKey("teams.id"))
+    id_away_team = Column(Integer, ForeignKey("teams.id"))
+    
+    league = relationship("LeagueModel", back_populates="fixtures")
+    odds = relationship("OddModel", back_populates="fixture", cascade="all, delete-orphan")
+    home_team = relationship(
+        "FixtureTeamModel",
+        primaryjoin="and_(FixtureModel.id == FixtureTeamModel.id_fixture, FixtureModel.id_home_team == FixtureTeamModel.id_team)",
+        foreign_keys="[FixtureTeamModel.id_fixture, FixtureTeamModel.id_team]",
+        uselist=False
     )
-
-    fixture_details_id = Column(Integer, ForeignKey("fixture_details.id"))
-    fixture_details = relationship(
-        "FixtureDetailsModel",
-        uselist=False,
-        back_populates="fixture",
+    away_team = relationship(
+        "FixtureTeamModel",
+        primaryjoin="and_(FixtureModel.id == FixtureTeamModel.id_fixture, FixtureModel.id_away_team == FixtureTeamModel.id_team)",
+        foreign_keys="[FixtureTeamModel.id_fixture, FixtureTeamModel.id_team]",
+        uselist=False
     )
-
 
 class LeagueModel(Base):
     """Base class for leagues"""
@@ -65,186 +50,57 @@ class LeagueModel(Base):
     __tablename__ = "leagues"
 
     id = Column(Integer, primary_key=True, index=True)
-    name = Column(String)
-    country = Column(String)
-    logo = Column(String)
-    flag = Column(String, nullable=True)
+    name = Column(String(255))
+    country = Column(String(255))
+    logo_url = Column(String(255))
+    flag_url = Column(String(255), nullable=True)
     season = Column(Integer)
-    round = Column(String)
+    round = Column(String(255))
 
-    fixture_details = relationship(
-        "FixtureDetailsModel",
-        uselist=True,
-        back_populates="league",
-    )
+    fixtures = relationship("FixtureModel", back_populates="league")
 
-
-class HomeTeamModel(Base):
-    """Base class for a home team"""
-
-    __tablename__ = "home_team"
-
-    id = Column(Integer)
-    name = Column(String)
-    logo = Column(String)
-    winner = Column(Boolean, nullable=True)
-
-    teams_id = Column(Integer, ForeignKey("teams.id"))
-    teams = relationship("TeamsModel", uselist=False, back_populates="home")
-
-    __table_args__ = (PrimaryKeyConstraint("id", "teams_id"),)
-
-
-class AwayTeamModel(Base):
-    """Base class for an away team"""
-
-    __tablename__ = "away_team"
-
-    id = Column(Integer)
-    name = Column(String)
-    logo = Column(String)
-    winner = Column(Boolean, nullable=True)
-
-    teams_id = Column(Integer, ForeignKey("teams.id"))
-    teams = relationship("TeamsModel", uselist=False, back_populates="away")
-
-    __table_args__ = (PrimaryKeyConstraint("id", "teams_id"),)
-
-
-class TeamsModel(Base):
-    """Base class for teams participating in a fixture"""
+class TeamModel(Base):
+    """Base class for teams"""
 
     __tablename__ = "teams"
 
-    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    home = relationship(
-        "HomeTeamModel",
-        uselist=False,
-        back_populates="teams",
-        cascade="all, delete-orphan",
-    )
-    away = relationship(
-        "AwayTeamModel",
-        uselist=False,
-        back_populates="teams",
-        cascade="all, delete-orphan",
-    )
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(255))
+    logo_url = Column(String(255))
 
-    fixture_details_id = Column(Integer, ForeignKey("fixture_details.id"))
-    fixture_details = relationship(
-        "FixtureDetailsModel",
-        uselist=False,
-        back_populates="teams",
-    )
+    fixture_teams = relationship("FixtureTeamModel", back_populates="team")
 
+class FixtureTeamModel(Base):
+    """Base class for fixture teams"""
 
-class GoalsModel(Base):
-    """Base class for goals scored by a team"""
+    __tablename__ = "fixture_teams"
 
-    __tablename__ = "goals"
+    id_fixture = Column(Integer, ForeignKey("fixtures.id"), primary_key=True)
+    id_team = Column(Integer, ForeignKey("teams.id"), primary_key=True)
+    goals = Column(Integer, nullable=True)
+    
+    team = relationship("TeamModel", back_populates="fixture_teams")
+    
+class OddValueModel(Base):
+    """Base class for odd values"""
+
+    __tablename__ = "odd_values"
 
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    home = Column(Integer, nullable=True)
-    away = Column(Integer, nullable=True)
+    id_odd = Column(Integer, ForeignKey("odds.id"))
+    value = Column(Float)
+    bet = Column(String(255))
 
-    fixture_details_id = Column(Integer, ForeignKey("fixture_details.id"))
-    fixture_details = relationship(
-        "FixtureDetailsModel",
-        uselist=False,
-        back_populates="goals",
-    )
-
-
-class ValueModel(Base):
-    """Base class for a value"""
-
-    __tablename__ = "values"
-
-    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    value = Column(String)
-    odd = Column(Float)
-
-    odds_id = Column(Integer)
-    fixture_details_id = Column(Integer)
-
-    __table_args__ = (
-        ForeignKeyConstraint(
-            ["odds_id", "fixture_details_id"], ["odds.id", "odds.fixture_details_id"]
-        ),
-    )
-
-    odds = relationship(
-        "OddModel",
-        primaryjoin="and_(ValueModel.odds_id == OddModel.id, ValueModel.fixture_details_id == OddModel.fixture_details_id)",
-        back_populates="values",
-    )
-
+    odds = relationship("OddModel", back_populates="values")
 
 class OddModel(Base):
-    """Base class for an odd"""
+    """Base class for odds"""
 
     __tablename__ = "odds"
 
-    id = Column(Integer)
-    name = Column(String)
+    id = Column(Integer, primary_key=True, index=True)
+    id_fixture = Column(Integer, ForeignKey("fixtures.id"))
+    name = Column(String(255))
 
-    fixture_details_id = Column(Integer, ForeignKey("fixture_details.id"))
-
-    __table_args__ = (PrimaryKeyConstraint("id", "fixture_details_id"),)
-
-    values = relationship(
-        "ValueModel",
-        back_populates="odds",
-        cascade="all, delete-orphan",
-    )
-
-    fixture_details = relationship(
-        "FixtureDetailsModel",
-        uselist=False,
-        back_populates="odds",
-    )
-
-
-class FixtureDetailsModel(Base):
-    """Base class for fixture details"""
-
-    __tablename__ = "fixture_details"
-
-    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
-
-    fixture = relationship(
-        "FixtureModel",
-        uselist=False,
-        back_populates="fixture_details",
-        cascade="all, delete-orphan",
-    )
-    league_id = Column(Integer, ForeignKey("leagues.id"))
-    league = relationship(
-        "LeagueModel",
-        uselist=False,
-        back_populates="fixture_details",
-        foreign_keys=[league_id],
-    )
-    teams = relationship(
-        "TeamsModel",
-        uselist=False,
-        back_populates="fixture_details",
-        cascade="all, delete-orphan",
-    )
-    goals = relationship(
-        "GoalsModel",
-        uselist=False,
-        back_populates="fixture_details",
-        cascade="all, delete-orphan",
-    )
-    odds = relationship(
-        "OddModel",
-        uselist=True,
-        back_populates="fixture_details",
-        cascade="all, delete-orphan",
-    )
-    last_updated = Column(DateTime)
-
-
-if __name__ == "__main__":
-    pass
+    fixture = relationship("FixtureModel", back_populates="odds")
+    values = relationship("OddValueModel", back_populates="odds", cascade="all, delete-orphan")
