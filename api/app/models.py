@@ -35,13 +35,15 @@ class FixtureModel(Base):
         "FixtureTeamModel",
         primaryjoin="and_(FixtureModel.id == FixtureTeamModel.id_fixture, FixtureModel.id_home_team == FixtureTeamModel.id_team)",
         foreign_keys="[FixtureTeamModel.id_fixture, FixtureTeamModel.id_team]",
-        uselist=False
+        uselist=False,
+        back_populates="home_fixture"
     )
     away_team = relationship(
         "FixtureTeamModel",
         primaryjoin="and_(FixtureModel.id == FixtureTeamModel.id_fixture, FixtureModel.id_away_team == FixtureTeamModel.id_team)",
         foreign_keys="[FixtureTeamModel.id_fixture, FixtureTeamModel.id_team]",
-        uselist=False
+        uselist=False,
+        back_populates="away_fixture"
     )
 
 class LeagueModel(Base):
@@ -80,6 +82,8 @@ class FixtureTeamModel(Base):
     goals = Column(Integer, nullable=True)
     
     team = relationship("TeamModel", back_populates="fixture_teams")
+    home_fixture = relationship("FixtureModel", back_populates="home_team")
+    away_fixture = relationship("FixtureModel", back_populates="away_team")
     
 class OddValueModel(Base):
     """Base class for odd values"""

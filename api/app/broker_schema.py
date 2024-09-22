@@ -40,17 +40,20 @@ class Teams(BaseModel):
     away: Team
     home: Team
 
-class WholeFixture(BaseModel):
-    date: datetime
+class Fixture(BaseModel):
     id: int
     referee: Optional[str] = None
-    status: Status
-    timestamp: int
     timezone: str
-    goals: Goals
+    date: datetime
+    timestamp: int
+    status: Status
+
+class WholeFixture(BaseModel):
+    fixture: Fixture
     league: League
-    odds: List[Odd]
     teams: Teams
+    goals: Goals
+    odds: List[Odd]
 
     class Config:
         from_attributes = True

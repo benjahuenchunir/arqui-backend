@@ -56,14 +56,14 @@ def upsert_fixture(db: Session, fixture: broker_schema.WholeFixture):
     
     # Upsert FixtureModel
     db_fixture = db.merge(models.FixtureModel(
-        id=fixture.id,
-        referee=fixture.referee,
-        timezone=fixture.timezone,
-        date=fixture.date,
-        timestamp=fixture.timestamp,
-        status_long=fixture.status.long,
-        status_short=fixture.status.short,
-        status_elapsed=fixture.status.elapsed,
+        id=fixture.fixture.id,
+        referee=fixture.fixture.referee,
+        timezone=fixture.fixture.timezone,
+        date=fixture.fixture.date,
+        timestamp=fixture.fixture.timestamp,
+        status_long=fixture.fixture.status.long,
+        status_short=fixture.fixture.status.short,
+        status_elapsed=fixture.fixture.status.elapsed,
         id_home_team=fixture.teams.home.id,
         id_away_team=fixture.teams.away.id,
         id_league=fixture.league.id
@@ -96,14 +96,14 @@ def upsert_fixture(db: Session, fixture: broker_schema.WholeFixture):
     
     # Upsert FixtureTeamModel for home team
     db_fixture_home_team = db.query(models.FixtureTeamModel).filter_by(
-        id_fixture=fixture.id,
+        id_fixture=fixture.fixture.id,
         id_team=fixture.teams.home.id
     ).first()
     if db_fixture_home_team:
         db_fixture_home_team.goals = fixture.goals.home
     else:
         db_fixture_home_team = models.FixtureTeamModel(
-            id_fixture=fixture.id,
+            id_fixture=fixture.fixture.id,
             id_team=fixture.teams.home.id,
             goals=fixture.goals.home
         )
@@ -111,14 +111,14 @@ def upsert_fixture(db: Session, fixture: broker_schema.WholeFixture):
     
     # Upsert FixtureTeamModel for away team
     db_fixture_away_team = db.query(models.FixtureTeamModel).filter_by(
-        id_fixture=fixture.id,
+        id_fixture=fixture.fixture.id,
         id_team=fixture.teams.away.id
     ).first()
     if db_fixture_away_team:
         db_fixture_away_team.goals = fixture.goals.away
     else:
         db_fixture_away_team = models.FixtureTeamModel(
-            id_fixture=fixture.id,
+            id_fixture=fixture.fixture.id,
             id_team=fixture.teams.away.id,
             goals=fixture.goals.away
         )
@@ -129,7 +129,7 @@ def upsert_fixture(db: Session, fixture: broker_schema.WholeFixture):
     for odd in fixture.odds:
         # Since odds have same ids for different fixtures, we need to check if they exist
         db_odd = db.query(models.OddModel).filter_by(
-            id_fixture=fixture.id,
+            id_fixture=fixture.fixture.id,
             name=odd.name # This assumes that the name of the odd for a fixture is unique
         ).first()
         
@@ -137,7 +137,7 @@ def upsert_fixture(db: Session, fixture: broker_schema.WholeFixture):
             pass # Update any future fields here
         else:
             db_odd = models.OddModel( # Autoincremented ID
-                id_fixture=fixture.id,
+                id_fixture=fixture.fixture.id,
                 name=odd.name
             )
             db.add(db_odd)
