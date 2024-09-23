@@ -1,6 +1,8 @@
 """SQLAlchemy models for the database."""
 
+from enum import Enum as PyEnum
 from sqlalchemy import (
+    Enum as SqlEnum,
     Column,
     DateTime,
     Float,
@@ -102,9 +104,38 @@ class OddModel(Base):
 
     __tablename__ = "odds"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     id_fixture = Column(Integer, ForeignKey("fixtures.id"))
     name = Column(String(255))
 
     fixture = relationship("FixtureModel", back_populates="odds")
     values = relationship("OddValueModel", back_populates="odds", cascade="all, delete-orphan")
+
+class UserModel(Base): # TODO verify this considering users will be managed with OAuth
+    """Base class for users"""
+
+    __tablename__ = "users"
+
+    id = Column(Integer, primary_key=True, index=True)
+    username = Column(String(255))
+    password = Column(String(255))
+
+    requests = relationship("RequestModel", back_populates="user")
+
+class RequestStatusEnum(PyEnum):
+    PENDING = "pending"
+    APPROVED = "approved"
+    REJECTED = "rejected"
+
+class RequestModel(Base):
+    """Base class for requests"""
+
+    __tablename__ = "requests"
+
+    id_user = Column(Integer, ForeignKey("users.id"), primary_key=True)
+    id_fixture = Column(Integer, ForeignKey("fixtures.id"), primary_key=True)
+    result = Column(String(255))
+    price = Column(Float)
+    status = Column(SqlEnum(RequestStatusEnum), default=RequestStatusEnum.PENDING)
+
+    user = relationship("UserModel", back_populates="requests")
