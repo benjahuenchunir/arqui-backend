@@ -38,14 +38,16 @@ class FixtureModel(Base):
         primaryjoin="and_(FixtureModel.id == FixtureTeamModel.id_fixture, FixtureModel.id_home_team == FixtureTeamModel.id_team)",
         foreign_keys="[FixtureTeamModel.id_fixture, FixtureTeamModel.id_team]",
         uselist=False,
-        back_populates="home_fixture"
+        back_populates="home_fixture",
+        overlaps="away_fixture,away_team"
     )
     away_team = relationship(
         "FixtureTeamModel",
         primaryjoin="and_(FixtureModel.id == FixtureTeamModel.id_fixture, FixtureModel.id_away_team == FixtureTeamModel.id_team)",
         foreign_keys="[FixtureTeamModel.id_fixture, FixtureTeamModel.id_team]",
         uselist=False,
-        back_populates="away_fixture"
+        back_populates="away_fixture",
+        overlaps="home_fixture,home_team"
     )
 
 class LeagueModel(Base):

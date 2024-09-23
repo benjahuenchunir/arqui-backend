@@ -53,7 +53,7 @@ def get_fixtures(
 
 
 def upsert_fixture(db: Session, fixture: broker_schema.WholeFixture):
-    """Upsert or update a fixture."""
+    """Upsert a fixture."""
     
     # Upsert FixtureModel
     db_fixture = db.merge(models.FixtureModel(
@@ -142,6 +142,9 @@ def upsert_fixture(db: Session, fixture: broker_schema.WholeFixture):
                 name=odd.name
             )
             db.add(db_odd)
+            # For some reason without this commit the first insertion odd values are not saved
+            db.commit()
+            db.refresh(db_odd)
         
         for value in odd.values: 
             # Since odd values do not have a unique ID, we need to check if they exist
