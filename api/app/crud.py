@@ -6,6 +6,7 @@ from datetime import datetime
 
 from sqlalchemy.orm import Session, aliased
 from sqlalchemy.sql import func
+from typing import Optional
 
 from . import models, broker_schema
 
@@ -18,9 +19,9 @@ def get_fixtures(
     db: Session,
     page: int = 0,
     count: int = 25,
-    home: str | None = None,
-    away: str | None = None,
-    date: str | None = None,
+    home: Optional[str] = None,
+    away: Optional[str] = None,
+    date: Optional[str] = None,
 ):
     """Get fixtures from the database."""
     HomeTeam = aliased(models.TeamModel)

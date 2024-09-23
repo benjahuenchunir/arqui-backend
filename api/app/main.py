@@ -2,12 +2,16 @@
 
 # pylint: disable=W0613
 
+from dotenv import load_dotenv
+load_dotenv()
+
 import os
 from fastapi import Depends, FastAPI, HTTPException, Request, status
 from fastapi.responses import FileResponse, RedirectResponse
 from sqlalchemy.orm import Session
 from . import crud, models, schemas, broker_schema
 from .database import engine, session_local
+from typing import Optional, List
 
 POST_TOKEN = os.getenv("POST_TOKEN")
 
@@ -45,16 +49,16 @@ def root():
 
 @app.get(
     "/fixtures",
-    response_model=list[schemas.Fixture],
+    response_model=List[schemas.Fixture],
     status_code=status.HTTP_200_OK,
 )
 def get_fixtures(
     db: Session = Depends(get_db),
     page: int = 0,
     count: int = 25,
-    home: str | None = None,
-    away: str | None = None,
-    date: str | None = None,
+    home: Optional[str] = None,
+    away: Optional[str] = None,
+    date: Optional[str] = None,
 ):
     """Get fixtures."""
     return crud.get_fixtures(

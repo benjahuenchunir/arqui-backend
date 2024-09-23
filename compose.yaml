@@ -1,6 +1,15 @@
 version: '3.8'
 
 services:
+  e0-database:
+    image: postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB_NAME}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+
   e0-api:
     image: api:latest
     build:
@@ -11,7 +20,7 @@ services:
     depends_on:
       - e0-database
     environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@e0-database:5432/${POSTGRES_DB}
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@e0-database:5432/${POSTGRES_DB_NAME}
       POST_TOKEN: ${POST_TOKEN}
     deploy:
       replicas: 3
@@ -26,20 +35,13 @@ services:
     depends_on:
       - e0-api
     environment:
-      HOST: ${MQTT_HOST}
-      PORT: ${MQTT_PORT}
-      USER: ${MQTT_USER}
-      PASSWORD: ${MQTT_PASSWORD}
+      API_HOST: e0-api
+      API_PORT: 8000
+      MQTT_HOST: ${MQTT_HOST}
+      MQTT_PORT: ${MQTT_PORT}
+      MQTT_USER: ${MQTT_USER}
+      MQTT_PASSWORD: ${MQTT_PASSWORD}
       POST_TOKEN: ${POST_TOKEN}
-
-  e0-database:
-    image: postgres
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
-    volumes:
-      - db_data:/var/lib/postgresql/data
 
 volumes:
   db_data:
