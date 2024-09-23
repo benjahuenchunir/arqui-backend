@@ -1,7 +1,7 @@
 version: '3.8'
 
 services:
-  e0-database:
+  arquisis-database:
     image: postgres
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
@@ -10,7 +10,7 @@ services:
     volumes:
       - db_data:/var/lib/postgresql/data
 
-  e0-api:
+  arquisis-api:
     image: api:latest
     build:
       context: ./api
@@ -18,24 +18,24 @@ services:
     ports:
       - "8001-8003:8000"
     depends_on:
-      - e0-database
+      - arquisis-database
     environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@e0-database:5432/${POSTGRES_DB_NAME}
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@arquisis-database:5432/${POSTGRES_DB_NAME}
       POST_TOKEN: ${POST_TOKEN}
     deploy:
       replicas: 3
       restart_policy:
         condition: on-failure
 
-  e0-mqtt:
+  arquisis-mqtt:
     image: mqtt:latest
     build:
       context: ./mqtt
       dockerfile: Dockerfile
     depends_on:
-      - e0-api
+      - arquisis-api
     environment:
-      API_HOST: e0-api
+      API_HOST: arquisis-api
       API_PORT: 8000
       MQTT_HOST: ${MQTT_HOST}
       MQTT_PORT: ${MQTT_PORT}
