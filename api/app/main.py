@@ -2,10 +2,11 @@
 
 # pylint: disable=W0613
 
-from dotenv import load_dotenv
-load_dotenv()
-
 import os
+if os.getenv("ENV") != "production":
+    from dotenv import load_dotenv
+    load_dotenv()
+
 from fastapi import Depends, FastAPI, HTTPException, Request, status
 from fastapi.responses import FileResponse, RedirectResponse
 from sqlalchemy.orm import Session

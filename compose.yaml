@@ -20,6 +20,7 @@ services:
     depends_on:
       - arquisis-database
     environment:
+      ENV: production
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@arquisis-database:5432/${POSTGRES_DB_NAME}
       POST_TOKEN: ${POST_TOKEN}
     deploy:
@@ -35,6 +36,7 @@ services:
     depends_on:
       - arquisis-api
     environment:
+      ENV: production
       API_HOST: arquisis-api
       API_PORT: 8000
       MQTT_HOST: ${MQTT_HOST}
