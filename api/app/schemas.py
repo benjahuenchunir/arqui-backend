@@ -1,130 +1,75 @@
 """Pydantic schema for the API."""
 
+from pydantic import BaseModel
+from typing import List, Optional
 from datetime import datetime
 
-from pydantic import BaseModel
-
-
-class Status(BaseModel):
-    """Base class for fixture status."""
-
-    long: str
-    short: str
-    elapsed: int | None
-
-    class Config:
-        """Pydantic configuration."""
-
-        from_attributes = True
-
-
-class Fixture(BaseModel):
-    """Base class for fixtures."""
-
+class Team(BaseModel):
+    """Base class for teams."""
+    
     id: int
-    referee: str | None
-    timezone: str
-    date: datetime
-    timestamp: int
-    status: Status
+    name: str
+    logo_url: str
 
     class Config:
-        """Pydantic configuration."""
-
         from_attributes = True
 
+class FixtureTeam(BaseModel):
+    goals: Optional[int] = None
+    team: Optional[Team] = None
+
+    class Config:
+        from_attributes = True
 
 class League(BaseModel):
     """Base class for leagues"""
-
+    
     id: int
     name: str
     country: str
-    logo: str
-    flag: str | None
+    logo_url: str
+    flag_url: Optional[str] = None
     season: int
     round: str
 
     class Config:
-        """Pydantic configuration."""
-
         from_attributes = True
 
-
-class Team(BaseModel):
-    """Base class for a team"""
-
+class OddValue(BaseModel):
+    """Base class for odd values"""
+    
     id: int
-    name: str
-    logo: str
-    winner: bool | None
+    value: float
+    bet: str
 
     class Config:
-        """Pydantic configuration."""
-
         from_attributes = True
-
-
-class Teams(BaseModel):
-    """Base class for teams participating in a fixture"""
-
-    home: Team
-    away: Team
-
-    class Config:
-        """Pydantic configuration."""
-
-        from_attributes = True
-
-
-class Goals(BaseModel):
-    """Base class for goals scored by a team"""
-
-    home: int | None
-    away: int | None
-
-    class Config:
-        """Pydantic configuration."""
-
-        from_attributes = True
-
-
-class Value(BaseModel):
-    """Base class for a value"""
-
-    value: str
-    odd: float
-
-    class Config:
-        """Pydantic configuration."""
-
-        from_attributes = True
-
 
 class Odd(BaseModel):
-    """Base class for an odd"""
-
+    """Base class for odds"""
+    
     id: int
     name: str
-    values: list[Value]
+    values: List[OddValue] = []
 
     class Config:
-        """Pydantic configuration."""
-
         from_attributes = True
 
-
-class FixtureDetails(BaseModel):
-    """Base class for fixture details"""
-
-    fixture: Fixture
+class Fixture(BaseModel):
+    """Base class for fixtures."""
+    
+    id: int
+    referee: Optional[str] = None
+    timezone: str
+    date: datetime
+    timestamp: int
+    status_long: str
+    status_short: str
+    status_elapsed: Optional[int] = None
+    home_team: FixtureTeam
+    away_team: FixtureTeam
     league: League
-    teams: Teams
-    goals: Goals
-    odds: list[Odd]
-    last_updated: datetime | None = None
+    odds: List[Odd] = []
 
     class Config:
-        """Pydantic configuration."""
-
         from_attributes = True
