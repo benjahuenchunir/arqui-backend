@@ -92,6 +92,6 @@ sudo crontab -e
 ```
 
 Agregar la siguiente tarea
-```
+```sh
 0 0,12 * * * certbot renew --quiet
 ```
