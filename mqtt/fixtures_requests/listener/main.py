@@ -20,6 +20,7 @@ PASS = os.getenv("PASSWORD")
 
 POST_TOKEN = os.getenv("POST_TOKEN")
 
+
 if not HOST:
     logging.error("HOST environment variable not set")
     sys.exit(1)
@@ -34,7 +35,7 @@ else:
 def on_connect(client, userdata, flags, reason_code, properties):
     """Callback for when the client receives a CONNACK response from the server."""
     logging.info("Connected with result code %s", str(reason_code))
-    client.subscribe(os.getenv("TOPIC"))
+    client.subscribe(os.getenv("REQUEST_TOPIC"))
 
 
 def on_message(client, userdata, msg):
