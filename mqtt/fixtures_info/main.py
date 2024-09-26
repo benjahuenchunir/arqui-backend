@@ -34,7 +34,7 @@ else:
 def on_connect(client, userdata, flags, reason_code, properties):
     """Callback for when the client receives a CONNACK response from the server."""
     logging.info("Connected with result code %s", str(reason_code))
-    client.subscribe(os.getenv("INFO_TOPIC"))
+    client.subscribe(os.getenv("TOPIC"))
 
 
 def on_message(client, userdata, msg):

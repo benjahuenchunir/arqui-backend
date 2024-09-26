@@ -15,7 +15,7 @@ class Msg(BaseModel):
 
 POST_TOKEN = os.getenv("POST_TOKEN")
 
-TOPIC = os.getenv("REQUEST_TOPIC")
+TOPIC = os.getenv("TOPIC")
 HOST = os.getenv("HOST")
 PORT = os.getenv("PORT")
 USER = os.getenv("USER")
@@ -59,16 +59,16 @@ async def publish(
     except Exception as e:
         return JSONResponse(status=500, content={"error": str(e)})
 
-API_ENDPOINT = os.getenv("API_ENDPOINT_REQUESTS")
+API_URL = os.getenv("API_URL")
 
-@app.post("/recieve")
+@app.post("/receive")
 async def recieve(
     request: Msg,
     token: None = Depends(verify_post_token)
     ):
     mesage = request.data
     try:
-        response = requests.post(API_ENDPOINT, json={
+        response = requests.post(API_URL, json={
             "headers": {"Authorization": f"Bearer {POST_TOKEN}"},
             "timeout": 5,
             "data": mesage

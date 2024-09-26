@@ -12,6 +12,7 @@ from . import crud, models, schemas
 from .database import engine, session_local
 
 POST_TOKEN = os.getenv("POST_TOKEN")
+PUBLISH_REQUESTS_URL = os.getenv("PUBLISH_REQUESTS_URL")
 
 app = FastAPI()
 

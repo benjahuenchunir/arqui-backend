@@ -13,6 +13,7 @@ services:
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
       POST_TOKEN: ${POST_TOKEN}
+      PUBLISH_REQUESTS_URL: ${PUBLISH_REQUESTS_URL}
     deploy:
       replicas: 3
       restart_policy:
@@ -30,14 +31,14 @@ services:
       PORT: ${MQTT_PORT}
       USER: ${MQTT_USER}
       PASSWORD: ${MQTT_PASSWORD}
-      TOPIC: ${FIXTURES_INFO_TOPIC}
+      TOPIC: ${INFO_TOPIC}
       POST_TOKEN: ${POST_TOKEN}
-      API_URL: ${FIXTURES_INFO_URL}
+      API_URL: ${INFO_URL}
 
-  fixtures_requests:
-    image: fixtures_requests:latest
+  fixtures_requests_api:
+    image: fixtures_requests_api:latest
     build:
-      context: ./mqtt/fixtures_requests
+      context: ./mqtt/fixtures_requests/app
       dockerfile: Dockerfile
     depends_on:
       - api
@@ -46,9 +47,25 @@ services:
       PORT: ${MQTT_PORT}
       USER: ${MQTT_USER}
       PASSWORD: ${MQTT_PASSWORD}
-      TOPIC: ${FIXTURES_REQUESTS_TOPIC}
+      TOPIC: ${REQUESTS_TOPIC}
       POST_TOKEN: ${POST_TOKEN}
-      API_URL: ${FIXTURES_REQUESTS_URL}
+      API_URL: ${REQUESTS_URL}
+
+  fixtures_requests_listener:
+    image: fixtures_requests_api:latest
+    build:
+      context: ./mqtt/fixtures_requests
+      dockerfile: Dockerfile
+    depends_on:
+      - fixtures_requests_api
+    environment:
+      HOST: ${MQTT_HOST}
+      PORT: ${MQTT_PORT}
+      USER: ${MQTT_USER}
+      PASSWORD: ${MQTT_PASSWORD}
+      TOPIC: ${REQUESTS_TOPIC}
+      POST_TOKEN: ${POST_TOKEN}
+      API_URL: ${REQUESTS_API_URL}
 
   fixtures_validation:
     image: fixtures_validation:latest
@@ -62,9 +79,9 @@ services:
       PORT: ${MQTT_PORT}
       USER: ${MQTT_USER}
       PASSWORD: ${MQTT_PASSWORD}
-      TOPIC: ${FIXTURES_VALIDATION_TOPIC}
+      TOPIC: ${VALIDATION_TOPIC}
       POST_TOKEN: ${POST_TOKEN}
-      API_URL: ${FIXTURES_VALIDATION_URL}
+      API_URL: ${VALIDATION_URL}
 
   fixtures_history:
     image: fixtures_history:latest
@@ -78,9 +95,9 @@ services:
       PORT: ${MQTT_PORT}
       USER: ${MQTT_USER}
       PASSWORD: ${MQTT_PASSWORD}
-      TOPIC: ${FIXTURES_HISTORY_TOPIC}
+      TOPIC: ${HISTORY_TOPIC}
       POST_TOKEN: ${POST_TOKEN}
-      API_URL: ${FIXTURES_HISTORY_URL}
+      API_URL: ${HISTORY_URL}
 
   db:
     image: postgres
