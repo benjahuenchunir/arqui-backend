@@ -61,7 +61,7 @@ async def publish_message(
     message = request.data
     try:
         publish.single(
-            "requests", 
+            "fixtures/requests", 
             message, 
             hostname=HOST,
             port=PORT,
