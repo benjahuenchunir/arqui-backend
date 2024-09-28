@@ -29,7 +29,6 @@ app = FastAPI()
 
 models.Base.metadata.create_all(bind=engine)
 
-
 def get_db():
     """Get a database session."""
     db = session_local()
@@ -60,16 +59,16 @@ def root():
 
 @app.get(
     "/fixtures",
-    response_model=list[schemas.FixtureDetails],
+    response_model=List[schemas.Fixture],
     status_code=status.HTTP_200_OK,
 )
 def get_fixtures(
     db: Session = Depends(get_db),
     page: int = 0,
     count: int = 25,
-    home: str | None = None,
-    away: str | None = None,
-    date: str | None = None,
+    home: Optional[str] = None,
+    away: Optional[str] = None,
+    date: Optional[str] = None,
 ):
     """Get fixtures."""
     return crud.get_fixtures(
@@ -79,12 +78,12 @@ def get_fixtures(
 
 @app.get(
     "/fixtures/{fixture_id}",
-    response_model=schemas.FixtureDetails,
+    response_model=schemas.Fixture,
     status_code=status.HTTP_200_OK,
 )
 def get_fixture(fixture_id: int, db: Session = Depends(get_db)):
     """Get a fixture."""
-    db_fixture = crud.get_fixture_details_by_fixture_id(db, fixture_id)
+    db_fixture = crud.get_fixture_by_id(db, fixture_id)
     if db_fixture is None:
         raise HTTPException(status_code=404, detail="Fixture not found")
     return db_fixture
@@ -92,19 +91,15 @@ def get_fixture(fixture_id: int, db: Session = Depends(get_db)):
 
 @app.post(
     f"/{INFO_PATH}",
-    response_model=schemas.FixtureDetails,
+    response_model=schemas.Fixture,
     status_code=status.HTTP_201_CREATED,
 )
-async def create_fixture(
-    fixture: schemas.FixtureDetails,
+async def upsert_fixture(
+    fixture: broker_schema.WholeFixture,
     request: Request,
     db: Session = Depends(get_db),
     token: None = Depends(verify_post_token),
 ):
-    """Create a new fixture."""
-    db_fixture_details = crud.get_fixture_details_by_fixture_id(db, fixture.fixture.id)
-    if db_fixture_details:
-        crud.delete_fixture(db, db_fixture_details.id)  # type: ignore
-
-    db_fixture = crud.create_fixture(db, fixture)
+    """Upsert a new fixture."""
+    db_fixture = crud.upsert_fixture(db, fixture)
     return db_fixture

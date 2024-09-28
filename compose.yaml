@@ -1,6 +1,15 @@
 version: '3.8'
 
 services:
+  arquisis-database:
+    image: postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB_NAME}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+
   arquisis-api:
     image: api:latest
     build:
@@ -12,7 +21,7 @@ services:
       - arquisis-database
     environment:
       ENV: production
-      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@arquisis-database:5432/${POSTGRES_DB}
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@arquisis-database:5432/${POSTGRES_DB_NAME}
       POST_TOKEN: ${POST_TOKEN}
 
       INFO_PATH: ${INFO_PATH}
@@ -135,15 +144,6 @@ services:
       API_HOST: arquisis-api
       API_PORT: 8000
       API_PATH: ${HISTORY_PATH}
-
-  arquisis-database:
-    image: postgres
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
-    volumes:
-      - db_data:/var/lib/postgresql/data
 
 volumes:
   db_data:

@@ -8,8 +8,9 @@ ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
 # Install pip requirements
-COPY requirements.txt .
-RUN pip install --upgrade --no-cache-dir -r requirements.txt
+COPY requirements/common.txt .
+COPY requirements/production.txt .
+RUN pip install --upgrade --no-cache-dir -r production.txt
 
 WORKDIR /app
 COPY . /app
