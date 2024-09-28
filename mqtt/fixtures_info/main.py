@@ -7,6 +7,10 @@ import os
 import logging
 import sys
 
+if os.getenv("ENV") != "production":
+    from dotenv import load_dotenv
+    load_dotenv()
+
 import paho.mqtt.client as mqtt
 import paho.mqtt.enums as mqtt_enums
 import requests
@@ -18,7 +22,13 @@ PORT = os.getenv("PORT")
 USER = os.getenv("USER")
 PASS = os.getenv("PASSWORD")
 
+TOPIC = os.getenv("TOPIC")
+
 POST_TOKEN = os.getenv("POST_TOKEN")
+
+API_HOST = os.getenv("API_HOST")
+API_PORT = os.getenv("API_PORT")
+API_PATH = os.getenv("API_PATH")
 
 if not HOST:
     logging.error("HOST environment variable not set")
@@ -30,11 +40,21 @@ else:
     logging.error("PORT environment variable not set or not an integer")
     sys.exit(1)
 
+if not API_HOST:
+    logging.error("API_HOST environment variable not set")
+    sys.exit(1)
+
+if API_PORT and API_PORT.isdigit():
+    API_PORT = int(API_PORT)
+else:
+    logging.error("API_PORT environment variable not set or not an integer")
+    sys.exit(1)
+
 
 def on_connect(client, userdata, flags, reason_code, properties):
     """Callback for when the client receives a CONNACK response from the server."""
     logging.info("Connected with result code %s", str(reason_code))
-    client.subscribe(os.getenv("TOPIC"))
+    client.subscribe(TOPIC)
 
 
 def on_message(client, userdata, msg):
@@ -46,7 +66,7 @@ def on_message(client, userdata, msg):
         logging.info("Processing match %s of %s", str(i + 1), str(len(matches)))
         try:
             requests.post(
-                os.getenv("API_URL"),
+                f"http://{API_HOST}:{API_PORT}/{API_PATH}",
                 json=match,
                 headers={"Authorization": f"Bearer {POST_TOKEN}"},
                 timeout=5,

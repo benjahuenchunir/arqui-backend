@@ -1,7 +1,7 @@
 version: '3.8'
 
 services:
-  api:
+  arquisis-api:
     image: api:latest
     build:
       context: ./api
@@ -9,97 +9,134 @@ services:
     ports:
       - "8001-8003:8000"
     depends_on:
-      - db
+      - arquisis-database
     environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+      ENV: production
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@arquisis-database:5432/${POSTGRES_DB}
       POST_TOKEN: ${POST_TOKEN}
+
+      INFO_PATH: ${INFO_PATH}
+      REQUESTS_PATH: ${REQUESTS_PATH}
+      VALIDATION_PATH: ${VALIDATION_PATH}
+      HISTORY_PATH: ${HISTORY_PATH}
+
+      REQUESTS_API_HOST: fixtures-requests-api
+      REQUESTS_API_PORT: 8000
       PUBLISH_REQUESTS_URL: ${PUBLISH_REQUESTS_URL}
     deploy:
       replicas: 3
       restart_policy:
         condition: on-failure
 
-  fixtures:_info:
+  fixtures-info:
     image: fixtures_info:latest
     build:
       context: ./mqtt/fixtures_info
       dockerfile: Dockerfile
     depends_on:
-      - api
+      - arquisis-api
     environment:
+      ENV: production
+
       HOST: ${MQTT_HOST}
       PORT: ${MQTT_PORT}
       USER: ${MQTT_USER}
       PASSWORD: ${MQTT_PASSWORD}
       TOPIC: ${INFO_TOPIC}
-      POST_TOKEN: ${POST_TOKEN}
-      API_URL: ${INFO_URL}
 
-  fixtures_requests_api:
-    image: fixtures_requests_api:latest
+      POST_TOKEN: ${POST_TOKEN}
+      API_HOST: arquisis-api
+      API_PORT: 8000
+      API_PATH: ${INFO_PATH}
+
+  fixtures-requests-api:
+    image: fixtures-requests-api:latest
     build:
       context: ./mqtt/fixtures_requests/app
       dockerfile: Dockerfile
     depends_on:
-      - api
+      - arquisis-api
     environment:
+      ENV: production
+
       HOST: ${MQTT_HOST}
       PORT: ${MQTT_PORT}
       USER: ${MQTT_USER}
       PASSWORD: ${MQTT_PASSWORD}
       TOPIC: ${REQUESTS_TOPIC}
-      POST_TOKEN: ${POST_TOKEN}
-      API_URL: ${REQUESTS_URL}
 
-  fixtures_requests_listener:
-    image: fixtures_requests_api:latest
+      POST_TOKEN: ${POST_TOKEN}
+      API_HOST: arquisis-api
+      API_PORT: 8000
+      API_PATH: ${INFO_PATH}
+
+      PUBLISH_REQUESTS_PATH: ${PUBLISH_REQUESTS_PATH}
+      RECIEVE_REQUESTS_PATH: ${RECIEVE_REQUESTS_PATH}
+
+  fixtures-requests-listener:
+    image: fixtures_requests_listener:latest
     build:
-      context: ./mqtt/fixtures_requests
+      context: ./mqtt/fixtures_requests/listener
       dockerfile: Dockerfile
     depends_on:
-      - fixtures_requests_api
+      - fixtures-requests-api
     environment:
+      ENV: production
+
       HOST: ${MQTT_HOST}
       PORT: ${MQTT_PORT}
       USER: ${MQTT_USER}
       PASSWORD: ${MQTT_PASSWORD}
       TOPIC: ${REQUESTS_TOPIC}
-      POST_TOKEN: ${POST_TOKEN}
-      API_URL: ${REQUESTS_API_URL}
 
-  fixtures_validation:
+      POST_TOKEN: ${POST_TOKEN}
+      API_HOST: fixtures-requests-api
+      API_PORT: 8000
+      API_PATH: ${RECIEVE_REQUESTS_PATH}
+
+  fixtures-validation:
     image: fixtures_validation:latest
     build:
       context: ./mqtt/fixtures_validation
       dockerfile: Dockerfile
     depends_on:
-      - api
+      - arquisis-api
     environment:
+      ENV: production
+
       HOST: ${MQTT_HOST}
       PORT: ${MQTT_PORT}
       USER: ${MQTT_USER}
       PASSWORD: ${MQTT_PASSWORD}
       TOPIC: ${VALIDATION_TOPIC}
-      POST_TOKEN: ${POST_TOKEN}
-      API_URL: ${VALIDATION_URL}
 
-  fixtures_history:
+      POST_TOKEN: ${POST_TOKEN}
+      API_HOST: arquisis-api
+      API_PORT: 8000
+      API_PATH: ${VALIDATION_PATH}
+
+  fixtures-history:
     image: fixtures_history:latest
     build:
       context: ./mqtt/fixtures_history
       dockerfile: Dockerfile
     depends_on:
-      - api
+      - arquisis-api
     environment:
+      ENV: production
+
       HOST: ${MQTT_HOST}
       PORT: ${MQTT_PORT}
       USER: ${MQTT_USER}
       PASSWORD: ${MQTT_PASSWORD}
       TOPIC: ${HISTORY_TOPIC}
-      POST_TOKEN: ${POST_TOKEN}
-      API_URL: ${HISTORY_URL}
 
-  db:
+      POST_TOKEN: ${POST_TOKEN}
+      API_HOST: arquisis-api
+      API_PORT: 8000
+      API_PATH: ${HISTORY_PATH}
+
+  arquisis-database:
     image: postgres
     environment:
       POSTGRES_USER: ${POSTGRES_USER}

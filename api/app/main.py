@@ -3,16 +3,27 @@
 # pylint: disable=W0613
 
 import os
+if os.getenv("ENV") != "production":
+    from dotenv import load_dotenv
+    load_dotenv()
 
 from fastapi import Depends, FastAPI, HTTPException, Request, status
 from fastapi.responses import FileResponse, RedirectResponse
 from sqlalchemy.orm import Session
-
-from . import crud, models, schemas
+from . import crud, models, schemas, broker_schema
 from .database import engine, session_local
+from typing import Optional, List
 
 POST_TOKEN = os.getenv("POST_TOKEN")
-PUBLISH_REQUESTS_URL = os.getenv("PUBLISH_REQUESTS_URL")
+
+INFO_PATH=os.getenv("INFO_PATH")
+REQUESTS_PATH=os.getenv("REQUESTS_PATH")
+VALIDATION_PATH=os.getenv("VALIDATION_PATH")
+HISTORY_PATH=os.getenv("HISTORY_PATH")
+
+REQUESTS_API_HOST=os.getenv("REQUESTS_API_HOST")
+REQUESTS_API_PORT=os.getenv("REQUESTS_API_PORT")
+PUBLISH_REQUESTS_PATH = os.getenv("PUBLISH_REQUESTS_PATH")
 
 app = FastAPI()
 
@@ -80,7 +91,7 @@ def get_fixture(fixture_id: int, db: Session = Depends(get_db)):
 
 
 @app.post(
-    "/fixtures",
+    f"/{INFO_PATH}",
     response_model=schemas.FixtureDetails,
     status_code=status.HTTP_201_CREATED,
 )

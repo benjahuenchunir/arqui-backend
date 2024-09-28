@@ -7,6 +7,10 @@ import os
 import logging
 import sys
 
+if os.getenv("ENV") != "production":
+    from dotenv import load_dotenv
+    load_dotenv()
+
 import paho.mqtt.client as mqtt
 import paho.mqtt.enums as mqtt_enums
 import requests
@@ -20,6 +24,10 @@ PASS = os.getenv("PASSWORD")
 
 POST_TOKEN = os.getenv("POST_TOKEN")
 
+API_HOST = os.getenv("API_HOST")
+API_PORT = os.getenv("API_PORT")
+API_PATH = os.getenv("VALIDATION_PATH")
+
 if not HOST:
     logging.error("HOST environment variable not set")
     sys.exit(1)
@@ -28,6 +36,16 @@ if PORT and PORT.isdigit():
     PORT = int(PORT)
 else:
     logging.error("PORT environment variable not set or not an integer")
+    sys.exit(1)
+
+if not API_HOST:
+    logging.error("API_HOST environment variable not set")
+    sys.exit(1)
+
+if API_PORT and API_PORT.isdigit():
+    API_PORT = int(API_PORT)
+else:
+    logging.error("API_PORT environment variable not set or not an integer")
     sys.exit(1)
 
 
@@ -43,7 +61,7 @@ def on_message(client, userdata, msg):
 
     try:
       requests.post(
-          os.getenv("API_URL"),
+          f"http://{API_HOST}:{API_PORT}/{API_PATH}",
           json=payload,
           headers={"Authorization": f"Bearer {POST_TOKEN}"},
           timeout=5,

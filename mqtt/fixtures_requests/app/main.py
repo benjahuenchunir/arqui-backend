@@ -8,18 +8,30 @@ import sys
 
 import os
 
+if os.getenv("ENV") != "production":
+    from dotenv import load_dotenv
+    load_dotenv()
+
 app = FastAPI()
 
 class Msg(BaseModel):
     data: str
 
-POST_TOKEN = os.getenv("POST_TOKEN")
-
-TOPIC = os.getenv("TOPIC")
 HOST = os.getenv("HOST")
 PORT = os.getenv("PORT")
 USER = os.getenv("USER")
 PASS = os.getenv("PASSWORD")
+
+POST_TOKEN = os.getenv("POST_TOKEN")
+
+TOPIC = os.getenv("TOPIC")
+
+API_HOST = os.getenv("API_HOST")
+API_PORT = os.getenv("API_PORT")
+API_PATH = os.getenv("API_PATH")
+
+PUBLISH_PATH=os.getenv("PUBLISH_REQUESTS_PATH")
+RECIEVE_PATH=os.getenv("RECIEVE_REQUESTS_PATH")
 
 if not HOST:
     logging.error("HOST environment variable not set")
@@ -38,7 +50,7 @@ def verify_post_token(request: Request):
         raise HTTPException(status_code=403, detail="Forbidden")
 
 
-@app.post("/publish")
+@app.post(f"/{PUBLISH_PATH}")
 async def publish(
     request: Msg,
     token: None = Depends(verify_post_token)
@@ -59,20 +71,22 @@ async def publish(
     except Exception as e:
         return JSONResponse(status=500, content={"error": str(e)})
 
-API_URL = os.getenv("API_URL")
 
-@app.post("/receive")
+
+@app.post(f"/{RECIEVE_PATH}")
 async def recieve(
     request: Msg,
     token: None = Depends(verify_post_token)
     ):
     mesage = request.data
     try:
-        response = requests.post(API_URL, json={
-            "headers": {"Authorization": f"Bearer {POST_TOKEN}"},
-            "timeout": 5,
-            "data": mesage
-            })
+        response = requests.post(f"http://{API_HOST}:{API_PORT}/{API_PATH}",
+                                json={
+                                    "headers": {"Authorization": f"Bearer {POST_TOKEN}"},
+                                    "timeout": 5,
+                                    "data": mesage
+                                    }
+                                )
         return JSONResponse(status=response.status_code, content=response.json())
     except Exception as e:
         return JSONResponse(status=500, content={"error": str(e)})
