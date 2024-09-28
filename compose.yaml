@@ -9,6 +9,7 @@ services:
       POSTGRES_DB: ${POSTGRES_DB_NAME}
     volumes:
       - db_data:/var/lib/postgresql/data
+    restart: on-failure
 
   arquisis-api:
     image: api:latest
@@ -19,31 +20,56 @@ services:
       - "8001-8003:8000"
     depends_on:
       - arquisis-database
+      - arquisis-publisher
     environment:
       ENV: production
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@arquisis-database:5432/${POSTGRES_DB_NAME}
       POST_TOKEN: ${POST_TOKEN}
+      PATH_FIXTURES: ${PATH_FIXTURES}
+
+      PUBLISHER_HOST: arquisis-publisher
+      PUBLISHER_PORT: 7999
     deploy:
       replicas: 3
       restart_policy:
         condition: on-failure
 
-  arquisis-mqtt:
-    image: mqtt:latest
+  arquisis-listener:
+    image: listener:latest
     build:
-      context: ./mqtt
+      context: ./listener
       dockerfile: Dockerfile
     depends_on:
       - arquisis-api
     environment:
       ENV: production
-      API_HOST: arquisis-api
-      API_PORT: 8000
+
       MQTT_HOST: ${MQTT_HOST}
       MQTT_PORT: ${MQTT_PORT}
       MQTT_USER: ${MQTT_USER}
       MQTT_PASSWORD: ${MQTT_PASSWORD}
+
+      PATH_FIXTURES: ${PATH_FIXTURES}
       POST_TOKEN: ${POST_TOKEN}
+      API_HOST: arquisis-api
+      API_PORT: 8000
+    restart: on-failure
+  
+  arquisis-publisher:
+    image: publisher:latest
+    build:
+      context: ./publisher
+      dockerfile: Dockerfile
+    environment:
+      ENV: production
+
+      MQTT_HOST: ${MQTT_HOST}
+      MQTT_PORT: ${MQTT_PORT}
+      MQTT_USER: ${MQTT_USER}
+      MQTT_PASSWORD: ${MQTT_PASSWORD}
+
+      POST_TOKEN: ${POST_TOKEN}
+    restart: on-failure
 
 volumes:
   db_data:

@@ -1,0 +1,4 @@
+fastapi[standard]
+psycopg2-binary
+uvicorn
+paho-mqtt
