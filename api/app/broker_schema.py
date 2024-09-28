@@ -57,3 +57,36 @@ class WholeFixture(BaseModel):
 
     class Config:
         from_attributes = True
+
+class FixtureUpdate(BaseModel):
+    fixture: Fixture
+    goals: Goals
+
+    class Config:
+        from_attributes = True
+
+
+class RequestCreate(BaseModel):
+    id: str
+    group_id: str
+    fixture_id: int
+    league_name: str
+    round: str
+    date: str
+    result: str
+    deposit_token: str
+    datetime: datetime
+    quantity: int
+    seller: int
+
+    class Config:
+        from_attributes = True
+
+class RequestValidation(BaseModel):
+    request_id: str
+    group_id: str
+    seller: int
+    valid: bool
+
+    class Config:
+        from_attributes = True

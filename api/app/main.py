@@ -26,8 +26,13 @@ REQUESTS_API_HOST=os.getenv("PUBLISHER_HOST")
 REQUESTS_API_PORT=os.getenv("PUBLISHER_PORT")
 
 PATH_FIXTURES=os.getenv("PATH_FIXTURES")
+PATH_REQUESTS=os.getenv("PATH_REQUESTS")
 
 if not PATH_FIXTURES:
+    print("PATH_FIXTURES environment variable not set")
+    sys.exit(1)
+
+if not PATH_REQUESTS:
     print("PATH_FIXTURES environment variable not set")
     sys.exit(1)
 
@@ -56,12 +61,13 @@ def favicon():
     """Favicon."""
     return FileResponse("app/favicon.ico")
 
-
+## /
 @app.get("/")
 def root():
     """Root path."""
     return RedirectResponse(url=PATH_FIXTURES)
 
+## /fixtures
 @app.get(
     f"/{PATH_FIXTURES}",
     response_model=List[schemas.Fixture],
@@ -80,20 +86,6 @@ def get_fixtures(
         db, page=page, count=count, home=home, away=away, date=date
     )
 
-
-@app.get(
-    f"/{PATH_FIXTURES}" +"/{fixture_id}",
-    response_model=schemas.Fixture,
-    status_code=status.HTTP_200_OK,
-)
-def get_fixture(fixture_id: int, db: Session = Depends(get_db)):
-    """Get a fixture."""
-    db_fixture = crud.get_fixture_by_id(db, fixture_id)
-    if db_fixture is None:
-        raise HTTPException(status_code=404, detail="Fixture not found")
-    return db_fixture
-
-
 @app.post(
     f"/{PATH_FIXTURES}",
     response_model=schemas.Fixture,
@@ -109,6 +101,66 @@ async def upsert_fixture(
     db_fixture = crud.upsert_fixture(db, fixture)
     return db_fixture
 
+## /fixtures/{fixture_id}
+@app.get(
+    f"/{PATH_FIXTURES}" +"/{fixture_id}",
+    response_model=schemas.Fixture,
+    status_code=status.HTTP_200_OK,
+)
+def get_fixture(fixture_id: int, db: Session = Depends(get_db)):
+    """Get a fixture."""
+    db_fixture = crud.get_fixture_by_id(db, fixture_id)
+    if db_fixture is None:
+        raise HTTPException(status_code=404, detail="Fixture not found")
+    return db_fixture
+
+@app.patch(
+    f"/{PATH_FIXTURES}" + "/{fixture_id}",
+    response_model=schemas.Fixture,
+    status_code=status.HTTP_201_CREATED,
+)
+def update_fixture(
+    fixture_id: int,
+    fixture: broker_schema.FixtureUpdate,
+    db: Session = Depends(get_db),
+    token: None = Depends(verify_post_token),
+):
+    """Update a fixture."""
+    db_fixture = crud.update_fixture(db, fixture_id, fixture)
+    return db_fixture
+
+## /requests
+@app.post(
+    f"/{PATH_REQUESTS}",
+    response_model=schemas.Request,
+    status_code=status.HTTP_201_CREATED,
+)
+def create_request(
+    request: broker_schema.RequestCreate,
+    db: Session = Depends(get_db),
+    token: None = Depends(verify_post_token),
+):
+    """Create a new request."""
+    return crud.create_request(db, request)
+
+## /requests/{request_id}
+@app.patch(
+    f"/{PATH_REQUESTS}" + "/{request_id}",
+    response_model=schemas.Request,
+    status_code=status.HTTP_201_CREATED,
+)
+def update_request(
+    request_id: str,
+    request: broker_schema.RequestValidation,
+    db: Session = Depends(get_db),
+    token: None = Depends(verify_post_token),
+):
+    """Update a request."""
+    return crud.update_request(db, request_id, request)
+
+
+
+## /publisher
 @app.get("/publisher")
 def get_publisher_status():
     """Get the status of the publisher. Only to show example API-PUBLISHER connection."""

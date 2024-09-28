@@ -9,6 +9,7 @@ from sqlalchemy import (
     ForeignKey,
     Integer,
     String,
+    Date,
 )
 from sqlalchemy.orm import relationship
 
@@ -122,7 +123,7 @@ class UserModel(Base): # TODO verify this considering users will be managed with
     username = Column(String(255))
     password = Column(String(255))
 
-    requests = relationship("RequestModel", back_populates="user")
+    requests = relationship("RequestUserModel", back_populates="user")
 
 class RequestStatusEnum(PyEnum):
     PENDING = "pending"
@@ -134,10 +135,27 @@ class RequestModel(Base):
 
     __tablename__ = "requests"
 
-    id_user = Column(Integer, ForeignKey("users.id"), primary_key=True)
-    id_fixture = Column(Integer, ForeignKey("fixtures.id"), primary_key=True)
+    id = Column(String, primary_key=True, index=True)
+    group_id = Column(String(255))
+    fixture_id = Column(Integer, ForeignKey("fixtures.id"))
+    league_name = Column(String(255))
+    round = Column(String(255))
+    date = Column(Date)
     result = Column(String(255))
-    price = Column(Float)
+    deposit_token = Column(String(255))
+    datetime = Column(DateTime)
+    quantity = Column(Integer)
+    seller = Column(Integer)
+    
     status = Column(SqlEnum(RequestStatusEnum), default=RequestStatusEnum.PENDING)
 
-    user = relationship("UserModel", back_populates="requests")
+
+class RequestUserModel(Base):
+    """Base class for requests"""
+
+    __tablename__ = "request_users"
+
+    id_user = Column(Integer, ForeignKey("users.id"), primary_key=True)
+    id_request = Column(String, ForeignKey("requests.id"), primary_key=True)
+
+    user = relationship("UserModel", back_populates="request_users")

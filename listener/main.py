@@ -13,7 +13,7 @@ import paho.mqtt.client as mqtt
 import paho.mqtt.enums as mqtt_enums
 import paho.mqtt.subscribe as subscribe
 import json
-from callbacks import on_history, on_info, on_validation
+from callbacks import on_history, on_info, on_validation, on_requests
 
 logging.basicConfig(level=logging.INFO)
 
@@ -41,6 +41,7 @@ TOPICS = {
     "fixtures/info": on_info,
     "fixtures/history": on_history,
     "fixtures/validation": on_validation,
+    "fixtures/requests": on_requests,
 }
 
 def on_subscribe(client, userdata, mid, reason_code_list, properties):

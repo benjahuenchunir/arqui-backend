@@ -26,6 +26,7 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@arquisis-database:5432/${POSTGRES_DB_NAME}
       POST_TOKEN: ${POST_TOKEN}
       PATH_FIXTURES: ${PATH_FIXTURES}
+      PATH_REQUESTS: ${PATH_REQUESTS}
 
       PUBLISHER_HOST: arquisis-publisher
       PUBLISHER_PORT: 7999

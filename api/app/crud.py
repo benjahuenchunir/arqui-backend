@@ -15,6 +15,29 @@ def get_fixture_by_id(db: Session, fixture_id: int):
     """Get fixture details by fixture ID."""
     return db.query(models.FixtureModel).filter(models.FixtureModel.id == fixture_id).one_or_none()
 
+def update_fixture(
+        db: Session,
+        fixture_id: int,
+        fixture: broker_schema.FixtureUpdate,
+        ):
+    """Update a fixture."""
+    db_fixture = db.query(models.FixtureModel).filter(models.FixtureModel.id == fixture_id).one_or_none()
+    if db_fixture is None:
+        return None
+    db_fixture.referee = fixture.referee
+    db_fixture.timezone = fixture.timezone
+    db_fixture.date = fixture.date
+    db_fixture.timestamp = fixture.timestamp
+    db_fixture.status_long = fixture.status.long
+    db_fixture.status_short = fixture.status.short
+    db_fixture.status_elapsed = fixture.status.elapsed
+
+    db_fixture.home_team.goals = fixture.goals.home
+    db_fixture.away_team.goals = fixture.goals.away
+    db.commit()
+    db.refresh(db_fixture)
+    return db_fixture
+
 def get_fixtures(
     db: Session,
     page: int = 0,
@@ -50,7 +73,6 @@ def get_fixtures(
         .limit(count)
         .all()
     )
-
 
 def upsert_fixture(db: Session, fixture: broker_schema.WholeFixture):
     """Upsert a fixture."""
@@ -166,3 +188,38 @@ def upsert_fixture(db: Session, fixture: broker_schema.WholeFixture):
     db.refresh(db_fixture)
     
     return db_fixture
+
+def create_request(db: Session, request: broker_schema.RequestCreate):
+    """Create a new request."""
+    db_request = models.RequestModel(
+        id=request.id,
+        group_id=request.group_id,
+        fixture_id=request.fixture_id,
+        league_name=request.league_name,
+        round=request.round,
+        date=request.date,
+        result=request.result,
+        deposit_token=request.deposit_token,
+        datetime=request.datetime,
+        quantity=request.quantity,
+        seller=request.seller,
+
+        status=models.RequestStatusEnum.PENDING
+    )
+    db.add(db_request)
+    db.commit()
+    db.refresh(db_request)
+    return db_request
+
+def update_request(db: Session, request_id: str, validation: broker_schema.RequestValidation):
+    """Update a request."""
+    db_request = db.query(models.RequestModel).filter(models.RequestModel.id == request_id).one_or_none()
+    if db_request is None:
+        return None
+    if validation.valid:
+        db_request.status = models.RequestStatusEnum.APPROVED
+    else:
+        db_request.status = models.RequestStatusEnum.REJECTED
+    db.commit()
+    db.refresh(db_request)
+    return db_request
