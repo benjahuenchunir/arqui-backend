@@ -3,20 +3,37 @@
 # pylint: disable=W0613
 
 import os
+if os.getenv("ENV") != "production":
+    from dotenv import load_dotenv
+    load_dotenv()
 
 from fastapi import Depends, FastAPI, HTTPException, Request, status
-from fastapi.responses import FileResponse, RedirectResponse
+from fastapi.responses import FileResponse, JSONResponse, RedirectResponse
 from sqlalchemy.orm import Session
-
-from . import crud, models, schemas
+from . import crud, models, schemas, broker_schema
 from .database import engine, session_local
+from typing import Optional, List
+import sys
+import requests
 
 POST_TOKEN = os.getenv("POST_TOKEN")
+
+REQUESTS_PATH=os.getenv("REQUESTS_PATH")
+VALIDATION_PATH=os.getenv("VALIDATION_PATH")
+HISTORY_PATH=os.getenv("HISTORY_PATH")
+
+REQUESTS_API_HOST=os.getenv("PUBLISHER_HOST")
+REQUESTS_API_PORT=os.getenv("PUBLISHER_PORT")
+
+PATH_FIXTURES=os.getenv("PATH_FIXTURES")
+
+if not PATH_FIXTURES:
+    print("PATH_FIXTURES environment variable not set")
+    sys.exit(1)
 
 app = FastAPI()
 
 models.Base.metadata.create_all(bind=engine)
-
 
 def get_db():
     """Get a database session."""
@@ -43,21 +60,20 @@ def favicon():
 @app.get("/")
 def root():
     """Root path."""
-    return RedirectResponse(url="/fixtures")
-
+    return RedirectResponse(url=PATH_FIXTURES)
 
 @app.get(
-    "/fixtures",
-    response_model=list[schemas.FixtureDetails],
+    f"/{PATH_FIXTURES}",
+    response_model=List[schemas.Fixture],
     status_code=status.HTTP_200_OK,
 )
 def get_fixtures(
     db: Session = Depends(get_db),
     page: int = 0,
     count: int = 25,
-    home: str | None = None,
-    away: str | None = None,
-    date: str | None = None,
+    home: Optional[str] = None,
+    away: Optional[str] = None,
+    date: Optional[str] = None,
 ):
     """Get fixtures."""
     return crud.get_fixtures(
@@ -66,33 +82,39 @@ def get_fixtures(
 
 
 @app.get(
-    "/fixtures/{fixture_id}",
-    response_model=schemas.FixtureDetails,
+    f"/{PATH_FIXTURES}" +"/{fixture_id}",
+    response_model=schemas.Fixture,
     status_code=status.HTTP_200_OK,
 )
 def get_fixture(fixture_id: int, db: Session = Depends(get_db)):
     """Get a fixture."""
-    db_fixture = crud.get_fixture_details_by_fixture_id(db, fixture_id)
+    db_fixture = crud.get_fixture_by_id(db, fixture_id)
     if db_fixture is None:
         raise HTTPException(status_code=404, detail="Fixture not found")
     return db_fixture
 
 
 @app.post(
-    "/fixtures",
-    response_model=schemas.FixtureDetails,
+    f"/{PATH_FIXTURES}",
+    response_model=schemas.Fixture,
     status_code=status.HTTP_201_CREATED,
 )
-async def create_fixture(
-    fixture: schemas.FixtureDetails,
+async def upsert_fixture(
+    fixture: broker_schema.WholeFixture,
     request: Request,
     db: Session = Depends(get_db),
     token: None = Depends(verify_post_token),
 ):
-    """Create a new fixture."""
-    db_fixture_details = crud.get_fixture_details_by_fixture_id(db, fixture.fixture.id)
-    if db_fixture_details:
-        crud.delete_fixture(db, db_fixture_details.id)  # type: ignore
-
-    db_fixture = crud.create_fixture(db, fixture)
+    """Upsert a new fixture."""
+    db_fixture = crud.upsert_fixture(db, fixture)
     return db_fixture
+
+@app.get("/publisher")
+def get_publisher_status():
+    """Get the status of the publisher. Only to show example API-PUBLISHER connection."""
+    try:
+        response = requests.get(f"http://{REQUESTS_API_HOST}:{REQUESTS_API_PORT}")
+        response.raise_for_status()
+        return JSONResponse(status_code=response.status_code, content=response.json())
+    except requests.RequestException as e:
+        raise HTTPException(status_code=500, detail=str(e))

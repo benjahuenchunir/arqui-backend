@@ -1,7 +1,17 @@
 version: '3.8'
 
 services:
-  e0-api:
+  arquisis-database:
+    image: postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB_NAME}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    restart: on-failure
+
+  arquisis-api:
     image: api:latest
     build:
       context: ./api
@@ -9,37 +19,57 @@ services:
     ports:
       - "8001-8003:8000"
     depends_on:
-      - e0-database
+      - arquisis-database
+      - arquisis-publisher
     environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@e0-database:5432/${POSTGRES_DB}
+      ENV: production
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@arquisis-database:5432/${POSTGRES_DB_NAME}
       POST_TOKEN: ${POST_TOKEN}
+      PATH_FIXTURES: ${PATH_FIXTURES}
+
+      PUBLISHER_HOST: arquisis-publisher
+      PUBLISHER_PORT: 7999
     deploy:
       replicas: 3
       restart_policy:
         condition: on-failure
 
-  e0-mqtt:
-    image: mqtt:latest
+  arquisis-listener:
+    image: listener:latest
     build:
-      context: ./mqtt
+      context: ./listener
       dockerfile: Dockerfile
     depends_on:
-      - e0-api
+      - arquisis-api
     environment:
-      HOST: ${MQTT_HOST}
-      PORT: ${MQTT_PORT}
-      USER: ${MQTT_USER}
-      PASSWORD: ${MQTT_PASSWORD}
-      POST_TOKEN: ${POST_TOKEN}
+      ENV: production
 
-  e0-database:
-    image: postgres
+      MQTT_HOST: ${MQTT_HOST}
+      MQTT_PORT: ${MQTT_PORT}
+      MQTT_USER: ${MQTT_USER}
+      MQTT_PASSWORD: ${MQTT_PASSWORD}
+
+      PATH_FIXTURES: ${PATH_FIXTURES}
+      POST_TOKEN: ${POST_TOKEN}
+      API_HOST: arquisis-api
+      API_PORT: 8000
+    restart: on-failure
+  
+  arquisis-publisher:
+    image: publisher:latest
+    build:
+      context: ./publisher
+      dockerfile: Dockerfile
     environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
-    volumes:
-      - db_data:/var/lib/postgresql/data
+      ENV: production
+
+      MQTT_HOST: ${MQTT_HOST}
+      MQTT_PORT: ${MQTT_PORT}
+      MQTT_USER: ${MQTT_USER}
+      MQTT_PASSWORD: ${MQTT_PASSWORD}
+
+      POST_TOKEN: ${POST_TOKEN}
+    restart: on-failure
 
 volumes:
   db_data:
