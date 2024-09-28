@@ -9,6 +9,7 @@ services:
       POSTGRES_DB: ${POSTGRES_DB_NAME}
     volumes:
       - db_data:/var/lib/postgresql/data
+    restart: on-failure
 
   arquisis-api:
     image: api:latest
@@ -52,6 +53,7 @@ services:
       POST_TOKEN: ${POST_TOKEN}
       API_HOST: arquisis-api
       API_PORT: 8000
+    restart: on-failure
   
   arquisis-publisher:
     image: publisher:latest
@@ -67,6 +69,7 @@ services:
       MQTT_PASSWORD: ${MQTT_PASSWORD}
 
       POST_TOKEN: ${POST_TOKEN}
+    restart: on-failure
 
 volumes:
   db_data:

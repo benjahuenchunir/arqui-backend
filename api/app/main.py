@@ -18,7 +18,6 @@ import requests
 
 POST_TOKEN = os.getenv("POST_TOKEN")
 
-INFO_PATH=os.getenv("INFO_PATH")
 REQUESTS_PATH=os.getenv("REQUESTS_PATH")
 VALIDATION_PATH=os.getenv("VALIDATION_PATH")
 HISTORY_PATH=os.getenv("HISTORY_PATH")
@@ -63,7 +62,6 @@ def root():
     """Root path."""
     return RedirectResponse(url=PATH_FIXTURES)
 
-
 @app.get(
     f"/{PATH_FIXTURES}",
     response_model=List[schemas.Fixture],
@@ -97,7 +95,7 @@ def get_fixture(fixture_id: int, db: Session = Depends(get_db)):
 
 
 @app.post(
-    f"/{INFO_PATH}",
+    f"/{PATH_FIXTURES}",
     response_model=schemas.Fixture,
     status_code=status.HTTP_201_CREATED,
 )
@@ -111,7 +109,7 @@ async def upsert_fixture(
     db_fixture = crud.upsert_fixture(db, fixture)
     return db_fixture
 
-@app.get(f"/publisher")
+@app.get("/publisher")
 def get_publisher_status():
     """Get the status of the publisher. Only to show example API-PUBLISHER connection."""
     try:

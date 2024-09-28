@@ -58,13 +58,11 @@ def on_connect(client, userdata, flags, reason_code, properties):
 
 def on_message(client, userdata, msg):
     """Callback for when a PUBLISH message is received from the server."""
-    print(msg.topic)
     payload = json.loads(json.loads(msg.payload.decode("utf-8")))
     if msg.topic in TOPICS:
-        print("Callback for topic %s", msg.topic)
         TOPICS[msg.topic](payload)
     else:
-        logging.error("No callback for topic %s", msg.topic)
+        logging.error("No callback for topic " + msg.topic)
 
 mqttc = mqtt.Client(mqtt_enums.CallbackAPIVersion.VERSION2)
 mqttc.on_connect = on_connect
