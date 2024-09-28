@@ -19,131 +19,54 @@ services:
       - "8001-8003:8000"
     depends_on:
       - arquisis-database
+      - arquisis-publisher
     environment:
       ENV: production
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@arquisis-database:5432/${POSTGRES_DB_NAME}
       POST_TOKEN: ${POST_TOKEN}
+      PATH_FIXTURES: ${PATH_FIXTURES}
 
-      INFO_PATH: ${INFO_PATH}
-      REQUESTS_PATH: ${REQUESTS_PATH}
-      VALIDATION_PATH: ${VALIDATION_PATH}
-      HISTORY_PATH: ${HISTORY_PATH}
-
-      REQUESTS_API_HOST: fixtures-requests-api
-      REQUESTS_API_PORT: 8000
-      PUBLISH_REQUESTS_URL: ${PUBLISH_REQUESTS_URL}
+      PUBLISHER_HOST: arquisis-publisher
+      PUBLISHER_PORT: 7999
     deploy:
       replicas: 3
       restart_policy:
         condition: on-failure
 
-  fixtures-info:
-    image: fixtures_info:latest
+  arquisis-listener:
+    image: listener:latest
     build:
-      context: ./mqtt/fixtures_info
+      context: ./listener
       dockerfile: Dockerfile
     depends_on:
       - arquisis-api
     environment:
       ENV: production
 
-      HOST: ${MQTT_HOST}
-      PORT: ${MQTT_PORT}
-      USER: ${MQTT_USER}
-      PASSWORD: ${MQTT_PASSWORD}
-      TOPIC: ${INFO_TOPIC}
+      MQTT_HOST: ${MQTT_HOST}
+      MQTT_PORT: ${MQTT_PORT}
+      MQTT_USER: ${MQTT_USER}
+      MQTT_PASSWORD: ${MQTT_PASSWORD}
 
+      PATH_FIXTURES: ${PATH_FIXTURES}
       POST_TOKEN: ${POST_TOKEN}
       API_HOST: arquisis-api
       API_PORT: 8000
-      API_PATH: ${INFO_PATH}
-
-  fixtures-requests-api:
-    image: fixtures-requests-api:latest
+  
+  arquisis-publisher:
+    image: publisher:latest
     build:
-      context: ./mqtt/fixtures_requests/app
+      context: ./publisher
       dockerfile: Dockerfile
-    depends_on:
-      - arquisis-api
     environment:
       ENV: production
 
-      HOST: ${MQTT_HOST}
-      PORT: ${MQTT_PORT}
-      USER: ${MQTT_USER}
-      PASSWORD: ${MQTT_PASSWORD}
-      TOPIC: ${REQUESTS_TOPIC}
+      MQTT_HOST: ${MQTT_HOST}
+      MQTT_PORT: ${MQTT_PORT}
+      MQTT_USER: ${MQTT_USER}
+      MQTT_PASSWORD: ${MQTT_PASSWORD}
 
       POST_TOKEN: ${POST_TOKEN}
-      API_HOST: arquisis-api
-      API_PORT: 8000
-      API_PATH: ${INFO_PATH}
-
-      PUBLISH_REQUESTS_PATH: ${PUBLISH_REQUESTS_PATH}
-      RECIEVE_REQUESTS_PATH: ${RECIEVE_REQUESTS_PATH}
-
-  fixtures-requests-listener:
-    image: fixtures_requests_listener:latest
-    build:
-      context: ./mqtt/fixtures_requests/listener
-      dockerfile: Dockerfile
-    depends_on:
-      - fixtures-requests-api
-    environment:
-      ENV: production
-
-      HOST: ${MQTT_HOST}
-      PORT: ${MQTT_PORT}
-      USER: ${MQTT_USER}
-      PASSWORD: ${MQTT_PASSWORD}
-      TOPIC: ${REQUESTS_TOPIC}
-
-      POST_TOKEN: ${POST_TOKEN}
-      API_HOST: fixtures-requests-api
-      API_PORT: 8000
-      API_PATH: ${RECIEVE_REQUESTS_PATH}
-
-  fixtures-validation:
-    image: fixtures_validation:latest
-    build:
-      context: ./mqtt/fixtures_validation
-      dockerfile: Dockerfile
-    depends_on:
-      - arquisis-api
-    environment:
-      ENV: production
-
-      HOST: ${MQTT_HOST}
-      PORT: ${MQTT_PORT}
-      USER: ${MQTT_USER}
-      PASSWORD: ${MQTT_PASSWORD}
-      TOPIC: ${VALIDATION_TOPIC}
-
-      POST_TOKEN: ${POST_TOKEN}
-      API_HOST: arquisis-api
-      API_PORT: 8000
-      API_PATH: ${VALIDATION_PATH}
-
-  fixtures-history:
-    image: fixtures_history:latest
-    build:
-      context: ./mqtt/fixtures_history
-      dockerfile: Dockerfile
-    depends_on:
-      - arquisis-api
-    environment:
-      ENV: production
-
-      HOST: ${MQTT_HOST}
-      PORT: ${MQTT_PORT}
-      USER: ${MQTT_USER}
-      PASSWORD: ${MQTT_PASSWORD}
-      TOPIC: ${HISTORY_TOPIC}
-
-      POST_TOKEN: ${POST_TOKEN}
-      API_HOST: arquisis-api
-      API_PORT: 8000
-      API_PATH: ${HISTORY_PATH}
 
 volumes:
   db_data:

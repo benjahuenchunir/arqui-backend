@@ -8,11 +8,13 @@ if os.getenv("ENV") != "production":
     load_dotenv()
 
 from fastapi import Depends, FastAPI, HTTPException, Request, status
-from fastapi.responses import FileResponse, RedirectResponse
+from fastapi.responses import FileResponse, JSONResponse
 from sqlalchemy.orm import Session
 from . import crud, models, schemas, broker_schema
 from .database import engine, session_local
 from typing import Optional, List
+import sys
+import requests
 
 POST_TOKEN = os.getenv("POST_TOKEN")
 
@@ -21,9 +23,14 @@ REQUESTS_PATH=os.getenv("REQUESTS_PATH")
 VALIDATION_PATH=os.getenv("VALIDATION_PATH")
 HISTORY_PATH=os.getenv("HISTORY_PATH")
 
-REQUESTS_API_HOST=os.getenv("REQUESTS_API_HOST")
-REQUESTS_API_PORT=os.getenv("REQUESTS_API_PORT")
-PUBLISH_REQUESTS_PATH = os.getenv("PUBLISH_REQUESTS_PATH")
+REQUESTS_API_HOST=os.getenv("PUBLISHER_HOST")
+REQUESTS_API_PORT=os.getenv("PUBLISHER_PORT")
+
+PATH_FIXTURES=os.getenv("PATH_FIXTURES")
+
+if not PATH_FIXTURES:
+    print("PATH_FIXTURES environment variable not set")
+    sys.exit(1)
 
 app = FastAPI()
 
@@ -54,11 +61,11 @@ def favicon():
 @app.get("/")
 def root():
     """Root path."""
-    return RedirectResponse(url="/fixtures")
+    return RedirectResponse(url=PATH_FIXTURES)
 
 
 @app.get(
-    "/fixtures",
+    f"/{PATH_FIXTURES}",
     response_model=List[schemas.Fixture],
     status_code=status.HTTP_200_OK,
 )
@@ -77,7 +84,7 @@ def get_fixtures(
 
 
 @app.get(
-    "/fixtures/{fixture_id}",
+    f"/{PATH_FIXTURES}" +"/{fixture_id}",
     response_model=schemas.Fixture,
     status_code=status.HTTP_200_OK,
 )
@@ -103,3 +110,13 @@ async def upsert_fixture(
     """Upsert a new fixture."""
     db_fixture = crud.upsert_fixture(db, fixture)
     return db_fixture
+
+@app.get(f"/publisher")
+def get_publisher_status():
+    """Get the status of the publisher. Only to show example API-PUBLISHER connection."""
+    try:
+        response = requests.get(f"http://{REQUESTS_API_HOST}:{REQUESTS_API_PORT}")
+        response.raise_for_status()
+        return JSONResponse(status_code=response.status_code, content=response.json())
+    except requests.RequestException as e:
+        raise HTTPException(status_code=500, detail=str(e))
