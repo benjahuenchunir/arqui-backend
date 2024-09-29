@@ -3,7 +3,7 @@ import sys
 
 services = {
     "API": "http://localhost:8001",
-    "Publisher": "http://localhost:7999",
+    "Publisher": "http://localhost:8001/publisher",
 }
 
 def check_service(name, url):
