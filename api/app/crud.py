@@ -7,8 +7,11 @@ from datetime import datetime
 from sqlalchemy.orm import Session, aliased
 from sqlalchemy.sql import func
 from typing import Optional
+import os
 
 from . import models, broker_schema
+
+BET_PRICE = os.getenv("BET_PRICE")
 
 def upsert_fixture(db: Session, fixture: broker_schema.WholeFixture):
     """Upsert a fixture."""
@@ -210,11 +213,13 @@ def upsert_request(db: Session, request: broker_schema.Request, user_id: int = N
     if request.group_id == group_id and user_id:
         db_user = db.query(models.UserModel).filter_by(id=user_id).one_or_none()
         if db_user:
-            db_request_user = models.RequestUserModel(
-                id_request=request.id,
-                id_user=user_id
-            )
-            db.add(db_request_user)
+            db_request.user = db_user
+            update_balance(db, db_request.user.id, db_request.quantity * BET_PRICE, add = False)
+
+    db_fixture = db.query(models.FixtureModel).filter_by(id=request.fixture_id).one_or_none()
+    if db_fixture:
+        db_request.fixture = db_fixture
+        db_fixture.available_bets -= request.quantity
 
     db.commit()
     db.refresh(db_request)
@@ -229,6 +234,23 @@ def update_request(db: Session, request_id: str, validation: broker_schema.Reque
         db_request.status = models.RequestStatusEnum.APPROVED
     else:
         db_request.status = models.RequestStatusEnum.REJECTED
+        db_request.fixture.available_bets += db_request.quantity
+        if db_request.user != None:
+            update_balance(db, db_request.user.id, db_request.quantity * BET_PRICE, add = True)
+
     db.commit()
     db.refresh(db_request)
     return db_request
+
+def update_balance(db: Session, user_id: int, amount: float, add: bool = True):
+    """Update user wallet."""
+    db_user = db.query(models.UserModel).filter_by(id=user_id).one_or_none()
+    if db_user is None:
+        return None
+    if add:
+        db_user.wallet += amount
+    else:
+        db_user.wallet -= amount
+    db.commit()
+    db.refresh(db_user)
+    return db_user

@@ -32,6 +32,9 @@ services:
       PUBLISHER_PORT: 7999
 
       GROUP_ID: ${GROUP_ID}
+
+      BET_PRICE: 1000
+      BET_LIMIT: 40
     deploy:
       replicas: 3
       restart_policy:

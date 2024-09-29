@@ -10,7 +10,7 @@ if os.getenv("ENV") != "production":
 from fastapi import Depends, FastAPI, HTTPException, Request, status
 from fastapi.responses import FileResponse, JSONResponse, RedirectResponse
 from sqlalchemy.orm import Session
-from . import crud, models, schemas, broker_schema
+from . import crud, models, schemas, broker_schema, publish
 from .database import engine, session_local
 from typing import Optional, List
 import sys
@@ -25,6 +25,8 @@ PUBLISHER_HOST=os.getenv("PUBLISHER_HOST")
 PUBLISHER_PORT=os.getenv("PUBLISHER_PORT")
 
 GROUP_ID=os.getenv("GROUP_ID")
+
+BET_PRICE = os.getenv("BET_PRICE")
 
 if not PATH_FIXTURES:
     print("PATH_FIXTURES environment variable not set")
@@ -97,8 +99,7 @@ async def upsert_fixture(
     token: None = Depends(verify_post_token),
 ):
     """Upsert a new fixture."""
-    db_fixture = crud.upsert_fixture(db, fixture)
-    return db_fixture
+    return crud.upsert_fixture(db, fixture)
 
 ## /fixtures/{fixture_id}
 @app.get(
@@ -119,7 +120,7 @@ def get_fixture(fixture_id: int, db: Session = Depends(get_db)):
     response_model=schemas.Fixture,
     status_code=status.HTTP_201_CREATED,
 )
-def update_fixture(
+async def update_fixture(
     fixture_id: int,
     fixture: broker_schema.FixtureUpdate,
     db: Session = Depends(get_db),
@@ -127,6 +128,25 @@ def update_fixture(
 ):
     """Update a fixture."""
     db_fixture = crud.update_fixture(db, fixture_id, fixture)
+
+    value = "Draw"
+    fixture_result = "---"
+    if fixture.home_team.goals > fixture.away_team.goals:
+        fixture_result = fixture.home_team.name
+        value = "Home"
+    elif fixture.home_team.goals < fixture.away_team.goals:
+        fixture_result = fixture.away_team.name
+        value = "Away"
+
+    for odd in fixture.odds:
+        if odd.name == "Match Winner":
+            for v in odd.values:
+                if v.bet == value:
+                    odds = v.value
+
+    for bet in fixture.requests:
+        if bet.status == models.RequestStatusEnum.APPROVED and bet.result == fixture_result:
+            crud.update_balance(db, bet.user_id, bet.quantity * odds * BET_PRICE, add = True)
     return db_fixture
 
 ## /requests
@@ -137,7 +157,7 @@ def update_fixture(
     status_code=status.HTTP_201_CREATED,
 )
 def upsert_request(
-    request: broker_schema.RequestCreate,
+    request: broker_schema.Request,
     db: Session = Depends(get_db),
     token: None = Depends(verify_post_token),
 ):
@@ -160,8 +180,6 @@ def update_request(
 ):
     """Update a request."""
     return crud.update_request(db, request_id, request)
-
-
 
 ## /publisher
 @app.get("/publisher")
