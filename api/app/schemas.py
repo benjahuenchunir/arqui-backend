@@ -73,3 +73,33 @@ class Fixture(BaseModel):
 
     class Config:
         from_attributes = True
+
+class User(BaseModel):
+    id: int
+    username: str
+
+    class Config:
+        from_attributes = True
+
+class Request(BaseModel):
+    id: str
+    group_id: str
+    fixture_id: int
+    league_name: str
+    round: str
+    date: str
+    result: str
+    deposit_token: str
+    datetime: datetime
+    quantity: int
+    seller: int
+
+    class Config:
+        from_attributes = True
+
+class OwnRequest(BaseModel):
+    request: Request
+    user: User
+
+    class Config:
+        from_attributes = True

@@ -18,15 +18,13 @@ import requests
 
 POST_TOKEN = os.getenv("POST_TOKEN")
 
-REQUESTS_PATH=os.getenv("REQUESTS_PATH")
-VALIDATION_PATH=os.getenv("VALIDATION_PATH")
-HISTORY_PATH=os.getenv("HISTORY_PATH")
-
-REQUESTS_API_HOST=os.getenv("PUBLISHER_HOST")
-REQUESTS_API_PORT=os.getenv("PUBLISHER_PORT")
-
 PATH_FIXTURES=os.getenv("PATH_FIXTURES")
 PATH_REQUESTS=os.getenv("PATH_REQUESTS")
+
+PUBLISHER_HOST=os.getenv("PUBLISHER_HOST")
+PUBLISHER_PORT=os.getenv("PUBLISHER_PORT")
+
+GROUP_ID=os.getenv("GROUP_ID")
 
 if not PATH_FIXTURES:
     print("PATH_FIXTURES environment variable not set")
@@ -86,6 +84,7 @@ def get_fixtures(
         db, page=page, count=count, home=home, away=away, date=date
     )
 
+# LISTENER
 @app.post(
     f"/{PATH_FIXTURES}",
     response_model=schemas.Fixture,
@@ -114,6 +113,7 @@ def get_fixture(fixture_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Fixture not found")
     return db_fixture
 
+# LISTENER
 @app.patch(
     f"/{PATH_FIXTURES}" + "/{fixture_id}",
     response_model=schemas.Fixture,
@@ -130,20 +130,23 @@ def update_fixture(
     return db_fixture
 
 ## /requests
+# LISTENER
 @app.post(
     f"/{PATH_REQUESTS}",
     response_model=schemas.Request,
     status_code=status.HTTP_201_CREATED,
 )
-def create_request(
+def upsert_request(
     request: broker_schema.RequestCreate,
     db: Session = Depends(get_db),
     token: None = Depends(verify_post_token),
 ):
-    """Create a new request."""
-    return crud.create_request(db, request)
+    if request.group_id != GROUP_ID:
+        """Create a new request."""
+        return crud.upsert_request(db, request, user_id = None, group_id = GROUP_ID)
 
 ## /requests/{request_id}
+# LISTENER 
 @app.patch(
     f"/{PATH_REQUESTS}" + "/{request_id}",
     response_model=schemas.Request,
@@ -165,7 +168,7 @@ def update_request(
 def get_publisher_status():
     """Get the status of the publisher. Only to show example API-PUBLISHER connection."""
     try:
-        response = requests.get(f"http://{REQUESTS_API_HOST}:{REQUESTS_API_PORT}")
+        response = requests.get(f"http://{PUBLISHER_HOST}:{PUBLISHER_PORT}")
         response.raise_for_status()
         return JSONResponse(status_code=response.status_code, content=response.json())
     except requests.RequestException as e:

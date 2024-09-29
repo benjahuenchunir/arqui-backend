@@ -66,7 +66,7 @@ class FixtureUpdate(BaseModel):
         from_attributes = True
 
 
-class RequestCreate(BaseModel):
+class Request(BaseModel):
     id: str
     group_id: str
     fixture_id: int

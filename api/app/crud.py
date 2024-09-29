@@ -10,70 +10,6 @@ from typing import Optional
 
 from . import models, broker_schema
 
-
-def get_fixture_by_id(db: Session, fixture_id: int):
-    """Get fixture details by fixture ID."""
-    return db.query(models.FixtureModel).filter(models.FixtureModel.id == fixture_id).one_or_none()
-
-def update_fixture(
-        db: Session,
-        fixture_id: int,
-        fixture: broker_schema.FixtureUpdate,
-        ):
-    """Update a fixture."""
-    db_fixture = db.query(models.FixtureModel).filter(models.FixtureModel.id == fixture_id).one_or_none()
-    if db_fixture is None:
-        return None
-    db_fixture.referee = fixture.referee
-    db_fixture.timezone = fixture.timezone
-    db_fixture.date = fixture.date
-    db_fixture.timestamp = fixture.timestamp
-    db_fixture.status_long = fixture.status.long
-    db_fixture.status_short = fixture.status.short
-    db_fixture.status_elapsed = fixture.status.elapsed
-
-    db_fixture.home_team.goals = fixture.goals.home
-    db_fixture.away_team.goals = fixture.goals.away
-    db.commit()
-    db.refresh(db_fixture)
-    return db_fixture
-
-def get_fixtures(
-    db: Session,
-    page: int = 0,
-    count: int = 25,
-    home: Optional[str] = None,
-    away: Optional[str] = None,
-    date: Optional[str] = None,
-):
-    """Get fixtures from the database."""
-    HomeTeam = aliased(models.TeamModel)
-    AwayTeam = aliased(models.TeamModel)
-
-    query = db.query(models.FixtureModel).join(
-        models.FixtureTeamModel, models.FixtureModel.id == models.FixtureTeamModel.id_fixture
-    ).join(
-        HomeTeam, models.FixtureModel.id_home_team == HomeTeam.id
-    ).join(
-        AwayTeam, models.FixtureModel.id_away_team == AwayTeam.id
-    )
-
-    date_obj = datetime.strptime(date, "%Y-%m-%d") if date else None
-
-    if home:
-        query = query.filter(HomeTeam.name == home)
-    if away:
-        query = query.filter(AwayTeam.name == away)
-    if date:
-        query = query.filter(func.date(models.FixtureModel.date) == date_obj)
-
-    return (
-        query.order_by(models.FixtureModel.date.desc())
-        .offset(page * count)
-        .limit(count)
-        .all()
-    )
-
 def upsert_fixture(db: Session, fixture: broker_schema.WholeFixture):
     """Upsert a fixture."""
     
@@ -189,7 +125,70 @@ def upsert_fixture(db: Session, fixture: broker_schema.WholeFixture):
     
     return db_fixture
 
-def create_request(db: Session, request: broker_schema.RequestCreate):
+def update_fixture(
+        db: Session,
+        fixture_id: int,
+        fixture: broker_schema.FixtureUpdate,
+        ):
+    """Update a fixture."""
+    db_fixture = db.query(models.FixtureModel).filter(models.FixtureModel.id == fixture_id).one_or_none()
+    if db_fixture is None:
+        return None
+    db_fixture.referee = fixture.referee
+    db_fixture.timezone = fixture.timezone
+    db_fixture.date = fixture.date
+    db_fixture.timestamp = fixture.timestamp
+    db_fixture.status_long = fixture.status.long
+    db_fixture.status_short = fixture.status.short
+    db_fixture.status_elapsed = fixture.status.elapsed
+
+    db_fixture.home_team.goals = fixture.goals.home
+    db_fixture.away_team.goals = fixture.goals.away
+    db.commit()
+    db.refresh(db_fixture)
+    return db_fixture
+
+def get_fixtures(
+    db: Session,
+    page: int = 0,
+    count: int = 25,
+    home: Optional[str] = None,
+    away: Optional[str] = None,
+    date: Optional[str] = None,
+):
+    """Get fixtures from the database."""
+    HomeTeam = aliased(models.TeamModel)
+    AwayTeam = aliased(models.TeamModel)
+
+    query = db.query(models.FixtureModel).join(
+        models.FixtureTeamModel, models.FixtureModel.id == models.FixtureTeamModel.id_fixture
+    ).join(
+        HomeTeam, models.FixtureModel.id_home_team == HomeTeam.id
+    ).join(
+        AwayTeam, models.FixtureModel.id_away_team == AwayTeam.id
+    )
+
+    date_obj = datetime.strptime(date, "%Y-%m-%d") if date else None
+
+    if home:
+        query = query.filter(HomeTeam.name == home)
+    if away:
+        query = query.filter(AwayTeam.name == away)
+    if date:
+        query = query.filter(func.date(models.FixtureModel.date) == date_obj)
+
+    return (
+        query.order_by(models.FixtureModel.date.desc())
+        .offset(page * count)
+        .limit(count)
+        .all()
+    )
+
+def get_fixture_by_id(db: Session, fixture_id: int):
+    """Get fixture details by fixture ID."""
+    return db.query(models.FixtureModel).filter(models.FixtureModel.id == fixture_id).one_or_none()
+
+def upsert_request(db: Session, request: broker_schema.Request, user_id: int = None, group_id: str = None):
     """Create a new request."""
     db_request = models.RequestModel(
         id=request.id,
@@ -207,6 +206,16 @@ def create_request(db: Session, request: broker_schema.RequestCreate):
         status=models.RequestStatusEnum.PENDING
     )
     db.add(db_request)
+
+    if request.group_id == group_id and user_id:
+        db_user = db.query(models.UserModel).filter_by(id=user_id).one_or_none()
+        if db_user:
+            db_request_user = models.RequestUserModel(
+                id_request=request.id,
+                id_user=user_id
+            )
+            db.add(db_request_user)
+
     db.commit()
     db.refresh(db_request)
     return db_request
