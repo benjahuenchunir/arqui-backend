@@ -18,12 +18,15 @@ def check_service(name, url):
     except requests.RequestException as e:
         print(f"{name} is not running. Error: {e}")
         return False
+    except ConnectionResetError:
+        print(f"{name} is not running. Connection reset.")
+        return False
     return True
 
 if __name__ == "__main__":
     all_services_running = True
     for service_name, service_url in services.items():
-        time.sleep(0.01)
+        time.sleep(1)
         if not check_service(service_name, service_url):
             all_services_running = False
     if not all_services_running:
