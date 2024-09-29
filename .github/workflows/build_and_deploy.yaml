@@ -28,6 +28,9 @@ jobs:
 
     - name: Build Docker images
       run: docker-compose build
+
+    - name: Run Docker containers
+      run: docker-compose up -d
       env:
         POSTGRES_USER: ${{ vars.POSTGRES_USER }}
         POSTGRES_PASSWORD: ${{ vars.POSTGRES_PASSWORD }}
@@ -38,9 +41,6 @@ jobs:
         MQTT_PORT: ${{ secrets.MQTT_PORT }}
         MQTT_USER: ${{ secrets.MQTT_USER }}
         MQTT_PASSWORD: ${{ secrets.MQTT_PASSWORD }}
-
-    - name: Run Docker containers
-      run: docker-compose up -d
 
     - name: Install Python
       run: sudo apt-get install -y python3 python3-pip
