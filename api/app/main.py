@@ -3,29 +3,33 @@
 # pylint: disable=W0613
 
 import os
-if os.getenv("ENV") != "production":
-    from dotenv import load_dotenv
-    load_dotenv()
+import sys
+from typing import List, Optional
 
+import requests
 from fastapi import Depends, FastAPI, HTTPException, Request, status
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse, RedirectResponse
 from sqlalchemy.orm import Session
-from . import crud, models, schemas, broker_schema
+
+from . import broker_schema, crud, models, schemas
 from .database import engine, session_local
-from typing import Optional, List
-import sys
-import requests
+
+if os.getenv("ENV") != "production":
+    from dotenv import load_dotenv
+
+    load_dotenv()
 
 POST_TOKEN = os.getenv("POST_TOKEN")
 
-REQUESTS_PATH=os.getenv("REQUESTS_PATH")
-VALIDATION_PATH=os.getenv("VALIDATION_PATH")
-HISTORY_PATH=os.getenv("HISTORY_PATH")
+REQUESTS_PATH = os.getenv("REQUESTS_PATH")
+VALIDATION_PATH = os.getenv("VALIDATION_PATH")
+HISTORY_PATH = os.getenv("HISTORY_PATH")
 
-REQUESTS_API_HOST=os.getenv("PUBLISHER_HOST")
-REQUESTS_API_PORT=os.getenv("PUBLISHER_PORT")
+REQUESTS_API_HOST = os.getenv("PUBLISHER_HOST")
+REQUESTS_API_PORT = os.getenv("PUBLISHER_PORT")
 
-PATH_FIXTURES=os.getenv("PATH_FIXTURES")
+PATH_FIXTURES = os.getenv("PATH_FIXTURES")
 
 if not PATH_FIXTURES:
     print("PATH_FIXTURES environment variable not set")
@@ -33,7 +37,16 @@ if not PATH_FIXTURES:
 
 app = FastAPI()
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["https://exlgy3k1qe.execute-api.us-east-1.amazonaws.com"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 models.Base.metadata.create_all(bind=engine)
+
 
 def get_db():
     """Get a database session."""
@@ -62,6 +75,7 @@ def root():
     """Root path."""
     return RedirectResponse(url=PATH_FIXTURES)
 
+
 @app.get(
     f"/{PATH_FIXTURES}",
     response_model=List[schemas.Fixture],
@@ -82,7 +96,7 @@ def get_fixtures(
 
 
 @app.get(
-    f"/{PATH_FIXTURES}" +"/{fixture_id}",
+    f"/{PATH_FIXTURES}" + "/{fixture_id}",
     response_model=schemas.Fixture,
     status_code=status.HTTP_200_OK,
 )
@@ -108,6 +122,7 @@ async def upsert_fixture(
     """Upsert a new fixture."""
     db_fixture = crud.upsert_fixture(db, fixture)
     return db_fixture
+
 
 @app.get("/publisher")
 def get_publisher_status():
