@@ -68,15 +68,8 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v3
 
-    - name: Debug SSH Connection
-      run: |
-        echo "Host: ${{ secrets.EC2_HOST }}"
-        echo "User: ${{ secrets.EC2_USER }}"
-        echo "Key: ${{ secrets.EC2_PRIVATE_KEY }}"
-        ssh -i ${{ secrets.EC2_PRIVATE_KEY }} -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} "echo SSH connection successful"
-
     - name: Deploy to EC2
-      uses: appleboy/ssh-action@v0.1.3
+      uses: appleboy/ssh-action@master
       with:
         host: ${{ secrets.EC2_HOST }}
         username: ${{ secrets.EC2_USER }}
