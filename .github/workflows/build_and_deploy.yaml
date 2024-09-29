@@ -11,6 +11,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    environment: build_test_env
 
     steps:
     - name: Checkout code
