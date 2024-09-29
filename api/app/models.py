@@ -159,4 +159,4 @@ class RequestModel(Base):
     status = Column(SqlEnum(RequestStatusEnum), default=RequestStatusEnum.PENDING)
 
     fixture = relationship("FixtureModel", back_populates="requests")
-    user = relationship("UserModel", back_populates="requests", default=None)
+    user = relationship("UserModel", back_populates="requests")
