@@ -1,6 +1,6 @@
-""" Logic for creating and publishing own requests. """
+""" Logic for publishing requests. """
 
-from . import crud, schemas, models
+from . import crud, schemas
 
 from sqlalchemy.orm import Session
 from datetime import datetime
@@ -8,7 +8,6 @@ import requests as req
 import uuid6
 
 import os
-
 
 PUBLISHER_HOST=os.getenv("PUBLISHER_HOST")
 PUBLISHER_PORT=os.getenv("PUBLISHER_PORT")
@@ -35,6 +34,7 @@ def create_request(db: Session, fixture_id: int, result: str, quantity: int, use
         quantity=quantity,
         seller=0
     )
+    publish_request(request)    
     return crud.upsert_request(db, request, user_id=user_id, group_id=GROUP_ID)
 
 def publish_request(request: schemas.Request):
