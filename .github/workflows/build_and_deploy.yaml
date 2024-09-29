@@ -28,6 +28,16 @@ jobs:
 
     - name: Build Docker images
       run: docker-compose build
+      env:
+        POSTGRES_USER: ${{ vars.POSTGRES_USER }}
+        POSTGRES_PASSWORD: ${{ vars.POSTGRES_PASSWORD }}
+        POSTGRES_DB_NAME: ${{ vars.POSTGRES_DB_NAME }}
+        POST_TOKEN: ${{ vars.POST_TOKEN }}
+        PATH_FIXTURES: ${{ vars.PATH_FIXTURES }}
+        MQTT_HOST: ${{ secrets.MQTT_HOST }}
+        MQTT_PORT: ${{ secrets.MQTT_PORT }}
+        MQTT_USER: ${{ secrets.MQTT_USER }}
+        MQTT_PASSWORD: ${{ secrets.MQTT_PASSWORD }}
 
     - name: Run Docker containers
       run: docker-compose up -d
