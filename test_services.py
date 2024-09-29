@@ -8,8 +8,12 @@ services = {
 }
 
 def check_service(name, url):
+    headers = {
+        "Content-Type": "application/json;charset=UTF-8",
+        "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko)"
+    }
     try:
-        response = requests.get(url)
+        response = requests.get(url,headers=headers)
         if response.status_code == 200:
             print(f"{name} is running.")
         else:
@@ -17,9 +21,6 @@ def check_service(name, url):
             return False
     except requests.RequestException as e:
         print(f"{name} is not running. Error: {e}")
-        return False
-    except ConnectionResetError:
-        print(f"{name} is not running. Connection reset.")
         return False
     return True
 
