@@ -1,5 +1,6 @@
 import requests
 import sys
+import time
 
 services = {
     "API": "http://localhost:8001",
@@ -22,6 +23,7 @@ def check_service(name, url):
 if __name__ == "__main__":
     all_services_running = True
     for service_name, service_url in services.items():
+        time.sleep(0.01)
         if not check_service(service_name, service_url):
             all_services_running = False
     if not all_services_running:
