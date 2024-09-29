@@ -11,6 +11,10 @@ POST_TOKEN = os.getenv("POST_TOKEN")
 PATH_FIXTURES = os.getenv("PATH_FIXTURES")
 PATH_REQUESTS = os.getenv("PATH_REQUESTS")
 
+if not POST_TOKEN:
+    logging.error("POST_TOKEN environment variable not set")
+    sys.exit(1)
+
 if not PATH_FIXTURES:
     print("PATH_FIXTURES environment variable not set")
     sys.exit(1)
