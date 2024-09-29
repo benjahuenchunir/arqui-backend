@@ -76,8 +76,7 @@ jobs:
         key: ${{ secrets.EC2_PRIVATE_KEY }}
         port: 22
         script: |
-          sudo apt-get install -y sshpass
           cd ./arqui-backend
-          sshpass -p "${{ secrets.DEPLOY_KEY_PASSWORD }}" git pull origin main
+          git pull origin main
           docker-compose down
           docker-compose up --build -d
