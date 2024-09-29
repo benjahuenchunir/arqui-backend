@@ -18,10 +18,6 @@ import requests
 
 POST_TOKEN = os.getenv("POST_TOKEN")
 
-REQUESTS_PATH=os.getenv("REQUESTS_PATH")
-VALIDATION_PATH=os.getenv("VALIDATION_PATH")
-HISTORY_PATH=os.getenv("HISTORY_PATH")
-
 REQUESTS_API_HOST=os.getenv("PUBLISHER_HOST")
 REQUESTS_API_PORT=os.getenv("PUBLISHER_PORT")
 
@@ -111,10 +107,15 @@ async def upsert_fixture(
 
 @app.get("/publisher")
 def get_publisher_status():
-    """Get the status of the publisher. Only to show example API-PUBLISHER connection."""
+    """Get the status of the publisher. To test API-PUBLISHER connection."""
     try:
         response = requests.get(f"http://{REQUESTS_API_HOST}:{REQUESTS_API_PORT}")
         response.raise_for_status()
         return JSONResponse(status_code=response.status_code, content=response.json())
     except requests.RequestException as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/test")
+def test_ci():
+    """Just to test the CI/CD pipeline. TODO remove this endpoint."""
+    return {"message": "Test CI/CD pipeline"}
