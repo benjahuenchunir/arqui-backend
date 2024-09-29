@@ -15,6 +15,8 @@ PUBLISHER_PORT=os.getenv("PUBLISHER_PORT")
 
 GROUP_ID=os.getenv("GROUP_ID")
 
+POST_TOKEN=os.getenv("POST_TOKEN")
+
 def create_request(db: Session, fixture_id: int, result: str, quantity: int, user_id: int):
     """Create a request."""
     db_fixture = crud.get_fixture_by_id(db, fixture_id)
@@ -39,7 +41,8 @@ def publish_request(request: schemas.Request):
     """Publish a request."""
     # Publish the request to the broker
     url = f"http://{PUBLISHER_HOST}:{PUBLISHER_PORT}/"
-    response = req.post(url, json=request.model_dump_json())
+    headers = {"Content-Type": "application/json", "Authorization": f"Bearer {POST_TOKEN}"}
+    response = req.post(url, data=request.model_dump_json(), headers=headers)
     if response.status_code != 201:
         raise Exception(f"Failed to publish request: {response.text}")
     return response.json()
