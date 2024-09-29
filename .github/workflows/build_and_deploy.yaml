@@ -50,6 +50,9 @@ jobs:
 
     - name: Run API tests
       run: python3 test_services.py
+      env:
+        PATH_FIXTURES: ${{ vars.PATH_FIXTURES }}
+        ENV: production
 
     - name: Check Listener Logs
       run: |
