@@ -15,6 +15,10 @@ from sqlalchemy.orm import relationship
 
 from .database import Base
 
+import os
+
+BET_LIMMIT = os.getenv("BET_LIMMIT")
+
 class FixtureModel(Base):
     """Base class for fixtures."""
 
@@ -31,9 +35,13 @@ class FixtureModel(Base):
     id_league = Column(Integer, ForeignKey("leagues.id"))
     id_home_team = Column(Integer, ForeignKey("teams.id"))
     id_away_team = Column(Integer, ForeignKey("teams.id"))
+
+    remaining_bets = Column(Integer, default=BET_LIMMIT)
     
     league = relationship("LeagueModel", back_populates="fixtures")
     odds = relationship("OddModel", back_populates="fixture", cascade="all, delete-orphan")
+    requests = relationship("RequestModel", back_populates="fixture")
+
     home_team = relationship(
         "FixtureTeamModel",
         primaryjoin="and_(FixtureModel.id == FixtureTeamModel.id_fixture, FixtureModel.id_home_team == FixtureTeamModel.id_team)",
@@ -122,8 +130,9 @@ class UserModel(Base): # TODO verify this considering users will be managed with
     id = Column(Integer, primary_key=True, index=True)
     username = Column(String(255))
     password = Column(String(255))
+    wallet = Column(Float, default=0)
 
-    requests = relationship("RequestUserModel", back_populates="user")
+    requests = relationship("RequestModel", back_populates="user")
 
 class RequestStatusEnum(PyEnum):
     PENDING = "pending"
@@ -149,13 +158,5 @@ class RequestModel(Base):
     
     status = Column(SqlEnum(RequestStatusEnum), default=RequestStatusEnum.PENDING)
 
-
-class RequestUserModel(Base):
-    """Base class for requests"""
-
-    __tablename__ = "request_users"
-
-    id_user = Column(Integer, ForeignKey("users.id"), primary_key=True)
-    id_request = Column(String, ForeignKey("requests.id"), primary_key=True)
-
-    user = relationship("UserModel", back_populates="request_users")
+    fixture = relationship("FixtureModel", back_populates="requests")
+    user = relationship("UserModel", back_populates="requests", default=None)
