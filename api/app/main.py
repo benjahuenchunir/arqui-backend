@@ -114,3 +114,8 @@ def get_publisher_status():
         return JSONResponse(status_code=response.status_code, content=response.json())
     except requests.RequestException as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/test")
+def test_ci():
+    """Just to test the CI/CD pipeline. TODO remove this endpoint."""
+    return {"message": "Test CI/CD pipeline"}

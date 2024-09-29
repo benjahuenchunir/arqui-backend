@@ -28,15 +28,6 @@ jobs:
 
     - name: Build Docker images
       run: docker-compose build
-    
-    - name: Echo environment variables
-      run: |
-        echo "POSTGRES_USER=${{ vars.POSTGRES_USER }}"
-        echo "POSTGRES_PASSWORD=${{ vars.POSTGRES_PASSWORD }}"
-        echo "POSTGRES_DB_NAME=${{ vars.POSTGRES_DB_NAME }}"
-        echo "POST_TOKEN=${{ vars.POST_TOKEN }}"
-        echo "PATH_FIXTURES=${{ vars.PATH_FIXTURES }}"
-        echo "MQTT_PORT=${{ secrets.MQTT_PORT }}"
 
     - name: Run Docker containers
       run: docker-compose up -d
