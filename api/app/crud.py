@@ -192,6 +192,10 @@ def get_fixture_by_id(db: Session, fixture_id: int):
     return db.query(models.FixtureModel).filter(models.FixtureModel.id == fixture_id).one_or_none()
 
 def upsert_request(db: Session, request: broker_schema.Request, user_id: int = None, group_id: str = None):
+
+    if get_fixture_by_id(db, request.fixture_id) is None:
+        return None
+
     """Create a new request."""
     db_request = models.RequestModel(
         request_id=request.request_id,
