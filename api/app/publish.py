@@ -22,8 +22,8 @@ def create_request(db: Session, req: schemas.FrontendRequest):
     db_fixture = crud.get_fixture_by_id(db, req.fixture_id)
     if db_fixture is None:
         return None
-    request = broker_schema.Request(
-        request_id=uuid6.uuid6(),
+    request = schemas.Request(
+        request_id=str(uuid6.uuid6()),
         group_id=GROUP_ID,
         fixture_id=req.fixture_id,
         league_name=db_fixture.league.name,

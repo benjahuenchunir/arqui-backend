@@ -173,37 +173,37 @@ async def update_fixture(
     return db_fixture
 
 
-## /requests
+# /requests
 # LISTENER
-# @app.post(
-#     f"/{PATH_REQUESTS}",
-#     response_model=schemas.Request,
-#     status_code=status.HTTP_201_CREATED,
-# )
-# def upsert_request(
-#     request: broker_schema.Request,
-#     db: Session = Depends(get_db),
-#     token: None = Depends(verify_post_token),
-# ):
-#     if request.group_id != GROUP_ID:
-#         """Create a new request."""
-#         response = crud.upsert_request(db, request, user_id=None, group_id=GROUP_ID)
+@app.post(
+    f"/{PATH_REQUESTS}",
+    response_model=schemas.Request,
+    status_code=status.HTTP_201_CREATED,
+)
+def upsert_request(
+    request: broker_schema.Request,
+    db: Session = Depends(get_db),
+    token: None = Depends(verify_post_token),
+):
+    if request.group_id != GROUP_ID:
+        """Create a new request."""
+        response = crud.upsert_request(db, request, user_id=None, group_id=GROUP_ID)
 
-#         if response is None:
-#             raise HTTPException(status_code=404, detail="Fixture not found")
+        if response is None:
+            raise HTTPException(status_code=404, detail="Fixture not found")
 
-#         return response
-#     else:
-#         raise HTTPException(status_code=402, detail="Group ID not allowed")
+        return response
+    else:
+        raise HTTPException(status_code=402, detail="Group ID not allowed")
 
 
 @app.post(
-    f"/{PATH_REQUESTS}",
+    f"/{PATH_REQUESTS}/frontend",
     status_code=status.HTTP_201_CREATED,
 )
 async def post_publisher_request(
-    db: Session,
     request: schemas.FrontendRequest,
+    db: Session = Depends(get_db),
 ):
     """Post a request to the publisher."""
     return publish.create_request(db, request)

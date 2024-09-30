@@ -3,17 +3,19 @@
 # pylint: disable=W0613
 
 import os
+
 if os.getenv("ENV") != "production":
     from dotenv import load_dotenv
+
     load_dotenv()
+import json
 import logging
 import sys
-import logging
+
 import paho.mqtt.client as mqtt
 import paho.mqtt.enums as mqtt_enums
 import paho.mqtt.subscribe as subscribe
-import json
-from callbacks import on_history, on_info, on_validation, on_requests
+from callbacks import on_history, on_info, on_requests, on_validation
 
 logging.basicConfig(level=logging.INFO)
 
@@ -44,6 +46,7 @@ TOPICS = {
     "fixtures/requests": on_requests,
 }
 
+
 def on_subscribe(client, userdata, mid, reason_code_list, properties):
     for reason_code in reason_code_list:
         if reason_code.is_failure:
@@ -51,11 +54,13 @@ def on_subscribe(client, userdata, mid, reason_code_list, properties):
         else:
             print(f"Broker granted the following QoS: {reason_code.value}")
 
+
 def on_connect(client, userdata, flags, reason_code, properties):
     """Callback for when the client receives a CONNACK response from the server."""
     logging.info("Connected to Broker with result code %s", str(reason_code))
     client.subscribe([(topic, 0) for topic in TOPICS])
     logging.info("Subscribed to topics: %s", TOPICS.keys())
+
 
 def on_message(client, userdata, msg):
     """Callback for when a PUBLISH message is received from the server."""
@@ -68,18 +73,19 @@ def on_message(client, userdata, msg):
     except json.JSONDecodeError or TypeError:
         logging.error("Invalid JSON payload")
         return
-    
+
     if msg.topic in TOPICS:
         TOPICS[msg.topic](payload)
     else:
         logging.error("No callback for topic " + msg.topic)
+
 
 mqttc = mqtt.Client(mqtt_enums.CallbackAPIVersion.VERSION2)
 mqttc.on_connect = on_connect
 mqttc.on_message = on_message
 mqttc.on_subscribe = on_subscribe
 
-mqttc.username_pw_set(USER, PASS )
+mqttc.username_pw_set(USER, PASS)
 mqttc.connect(HOST, PORT, 60)
 
 mqttc.loop_forever()
