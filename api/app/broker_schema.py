@@ -68,7 +68,7 @@ class FixtureUpdate(BaseModel):
 
 
 class Request(BaseModel):
-    request_id: Union[UUID, str]
+    request_id: str
     group_id: Union[int, str]
     fixture_id: int
     league_name: str = Field(default="")
@@ -106,12 +106,6 @@ class Request(BaseModel):
         except:
             return dt.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S UTC")
     
-    @field_validator("request_id")
-    def request_id_validator(cls, value):
-        if isinstance(value, str):
-            return UUID(value)
-        return value
-    
     @field_validator("deposit_token")
     def deposit_token_validator(cls, value):
         if type(value) != str:
@@ -122,16 +116,10 @@ class Request(BaseModel):
         from_attributes = True
 
 class RequestValidation(BaseModel):
-    request_id: Union[UUID, str]
+    request_id: str
     group_id: int
     seller: int
     valid: bool
-
-    @field_validator("request_id")
-    def request_id_validator(cls, value):
-        if isinstance(value, str):
-            return UUID(value)
-        return value
 
     class Config:
         from_attributes = True

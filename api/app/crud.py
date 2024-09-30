@@ -200,8 +200,10 @@ def upsert_request(db: Session, request: broker_schema.Request, user_id: int = N
     
     if type(request.date) == str:
         print(request.date)
-        request.date = datetime.strptime(request.date, "%Y-%m-%d")
-        print(request.date)
+        try:
+            request.date = datetime.strptime(request.date, "%Y-%m-%d")
+        except ValueError:
+            request.date = ""
     
     if type(request.datetime) != str:
         request.datetime = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S UTC")
