@@ -1,8 +1,8 @@
 """Pydantic schema for the API."""
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import List, Optional
-from datetime import datetime
+from datetime import datetime, timezone
 
 class Team(BaseModel):
     """Base class for teams."""
@@ -82,17 +82,17 @@ class User(BaseModel):
         from_attributes = True
 
 class Request(BaseModel):
-    id: str
-    group_id: str
+    request_id: str
+    group_id: int
     fixture_id: int
-    league_name: str
-    round: str
-    date: str
+    league_name: str = Field(default="")
+    round: str = Field(default="")
+    date: str = Field(default="")
     result: str
-    deposit_token: str
-    datetime: str
+    deposit_token: str = Field(default="")
+    datetime: str = Field(default=datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S UTC"))
     quantity: int
-    seller: int
+    seller: int = Field(default=0)
 
     class Config:
         from_attributes = True
