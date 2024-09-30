@@ -18,6 +18,10 @@ from .database import Base
 import os
 
 BET_LIMMIT = os.getenv("BET_LIMMIT")
+try:
+    BET_LIMMIT = int(BET_LIMMIT)
+except:
+    BET_LIMMIT = 40
 
 class FixtureModel(Base):
     """Base class for fixtures."""
