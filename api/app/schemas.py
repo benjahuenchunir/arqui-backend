@@ -90,7 +90,7 @@ class Request(BaseModel):
     date: str
     result: str
     deposit_token: str
-    datetime: datetime
+    datetime: str
     quantity: int
     seller: int
 
