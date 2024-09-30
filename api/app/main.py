@@ -173,7 +173,14 @@ def upsert_request(
 ):
     if request.group_id != GROUP_ID:
         """Create a new request."""
-        return crud.upsert_request(db, request, user_id = None, group_id = GROUP_ID)
+        response = crud.upsert_request(db, request, user_id = None, group_id = GROUP_ID)
+
+        if response is None:
+            raise HTTPException(status_code=404, detail="Fixture not found")
+        
+        return response
+    else:
+        raise HTTPException(status_code=402, detail="Group ID not allowed")
 
 ## /requests/{request_id}
 # LISTENER 
