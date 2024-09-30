@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Optional
 from pydantic import BaseModel, Field
 
@@ -75,7 +75,7 @@ class Request(BaseModel):
     date: str = Field(default=None)
     result: str
     deposit_token: str = Field(default="")
-    datetime: str = Field(default=datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%S UTC"))
+    datetime: str = Field(default=datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S UTC"))
     quantity: int
     seller: int = Field(default=0)
 

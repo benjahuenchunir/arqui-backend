@@ -3,7 +3,7 @@
 from . import crud, schemas
 
 from sqlalchemy.orm import Session
-from datetime import datetime
+from datetime import datetime, timezone
 import requests as req
 import uuid6
 
@@ -30,7 +30,7 @@ def create_request(db: Session, fixture_id: int, result: str, quantity: int, use
         date=db_fixture.date,
         result=result,
         deposit_token="",
-        datetime=datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%S UTC"),
+        datetime=datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S UTC"),
         quantity=quantity,
         seller=0
     )
