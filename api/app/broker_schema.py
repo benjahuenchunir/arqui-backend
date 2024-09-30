@@ -1,7 +1,8 @@
-from datetime import datetime, timezone
-from typing import List, Optional
-from pydantic import BaseModel, Field
+from datetime import datetime as dt, timezone
+from typing import List, Optional, Union
+from pydantic import BaseModel, Field, field_validator
 
+from uuid import UUID
 
 class Status(BaseModel):
     elapsed: Optional[int] = None
@@ -44,7 +45,7 @@ class Fixture(BaseModel):
     id: int
     referee: Optional[str] = None
     timezone: str
-    date: datetime
+    date: dt
     timestamp: int
     status: Status
 
@@ -67,26 +68,62 @@ class FixtureUpdate(BaseModel):
 
 
 class Request(BaseModel):
-    request_id: str
-    group_id: int
+    request_id: Union[UUID, str]
+    group_id: Union[int, str]
     fixture_id: int
     league_name: str = Field(default="")
     round: str = Field(default="")
-    date: str = Field(default=None)
+    date: Union[dt, str] = Field(default="")
     result: str
-    deposit_token: str = Field(default="")
-    datetime: str = Field(default=datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S UTC"))
+    deposit_token: Optional[str] = Field(default="")
+    datetime: Union[dt, str] = Field(default=dt.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S UTC"))
     quantity: int
     seller: int = Field(default=0)
+
+    @field_validator("date")
+    def date_validator(cls, value):
+        try:
+            if isinstance(value, str):
+                return dt.strptime(value, "%Y-%m-%d")
+            return value
+        except:
+            return ""
+        
+    @field_validator("datetime")
+    def datetime_validator(cls, value):
+        try:
+            if isinstance(value, dt):
+                return value.strftime("%Y-%m-%dT%H:%M:%S UTC")
+            return value
+        except:
+            return dt.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S UTC")
+    
+    @field_validator("request_id")
+    def request_id_validator(cls, value):
+        if isinstance(value, str):
+            return UUID(value)
+        return value
+    
+    @field_validator("deposit_token")
+    def deposit_token_validator(cls, value):
+        if type(value) != str:
+            return ""
+        return value
 
     class Config:
         from_attributes = True
 
 class RequestValidation(BaseModel):
-    request_id: str
+    request_id: Union[UUID, str]
     group_id: int
     seller: int
     valid: bool
+
+    @field_validator("request_id")
+    def request_id_validator(cls, value):
+        if isinstance(value, str):
+            return UUID(value)
+        return value
 
     class Config:
         from_attributes = True

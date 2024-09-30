@@ -1,5 +1,4 @@
 """ Logic for publishing requests. """
-
 from . import crud, schemas
 
 from sqlalchemy.orm import Session
@@ -22,12 +21,12 @@ def create_request(db: Session, fixture_id: int, result: str, quantity: int, use
     if db_fixture is None:
         return None
     request = schemas.Request(
-        id=uuid6.uuid6(),
+        request_id=uuid6.uuid6(),
         group_id=GROUP_ID,
         fixture_id=fixture_id,
         league_name=db_fixture.league.name,
         round=db_fixture.league.round,
-        date=db_fixture.date,
+        date = str(db_fixture.date),
         result=result,
         deposit_token="",
         datetime=datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S UTC"),

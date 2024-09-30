@@ -2,7 +2,7 @@
 
 # pylint: disable=C0103
 
-from datetime import datetime
+from datetime import datetime, timezone
 
 from sqlalchemy.orm import Session, aliased
 from sqlalchemy.sql import func
@@ -197,12 +197,35 @@ def upsert_request(db: Session, request: broker_schema.Request, user_id: int = N
     
     if db_fixture is None:
         return None
+    
+    if type(request.date) == str:
+        print(request.date)
+        request.date = datetime.strptime(request.date, "%Y-%m-%d")
+        print(request.date)
+    
+    if type(request.datetime) != str:
+        request.datetime = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S UTC")
 
+    if type(request.seller) != int:
+        request.seller = 0
+    
+    if type(request.league_name) != str:
+        request.league_name = db_fixture.league.name
+
+    if type(request.round) != str:
+        request.round = db_fixture.league.round
+
+    if type(request.result) != str:
+        request.result = "---"
+
+    if type(request.deposit_token) != str:
+        request.deposit_token = ""
+    
     """Create a new request."""
     db_request = models.RequestModel(
-        request_id=request.request_id,
-        group_id=request.group_id,
-        fixture_id=request.fixture_id,
+        request_id=str(request.request_id),
+        group_id=int(request.group_id),
+        fixture_id=int(request.fixture_id),
         league_name=request.league_name,
         round=request.round,
         date=request.date,
