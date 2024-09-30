@@ -194,7 +194,7 @@ def get_fixture_by_id(db: Session, fixture_id: int):
 def upsert_request(db: Session, request: broker_schema.Request, user_id: int = None, group_id: str = None):
     """Create a new request."""
     db_request = models.RequestModel(
-        id=request.request_id,
+        request_id=request.request_id,
         group_id=request.group_id,
         fixture_id=request.fixture_id,
         league_name=request.league_name,
