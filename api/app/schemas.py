@@ -94,50 +94,16 @@ class User(BaseModel):
 
 class Request(BaseModel):
     request_id: str
-    group_id: Union[int, str]
+    group_id: str
     fixture_id: int
-    league_name: str = Field(default="")
-    round: str = Field(default="")
-    date: Union[dt, str] = Field(default="")
-    result: str = Field(default="")
-    deposit_token: Optional[str] = Field(default="")
-    datetime: Union[dt, str] = Field(
-        default=dt.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S UTC")
-    )
+    league_name: str
+    round: str
+    date: dt
+    result: str
+    deposit_token: str
+    datetime: str
     quantity: int
-    seller: int = Field(default=0)
-
-    @field_validator("result")
-    def result_validator(cls, value):
-        if type(value) != str:
-            return ""
-        return value
-
-    @field_validator("date")
-    def date_validator(cls, value):
-        if isinstance(value, str):
-            try:
-                value = dt.strptime(value, "%Y-%m-%d")
-            except ValueError:
-                value = ""
-        elif isinstance(value, dt):
-            return value
-        return ""
-
-    @field_validator("datetime")
-    def datetime_validator(cls, value):
-        try:
-            if isinstance(value, dt):
-                return value.strftime("%Y-%m-%dT%H:%M:%S UTC")
-            return value
-        except:
-            return dt.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S UTC")
-
-    @field_validator("deposit_token")
-    def deposit_token_validator(cls, value):
-        if type(value) != str:
-            return ""
-        return value
+    seller: int
 
     class Config:
         from_attributes = True

@@ -20,15 +20,17 @@ POST_TOKEN = os.getenv("POST_TOKEN")
 def create_request(db: Session, req: schemas.FrontendRequest):
     """Create a request."""
     db_fixture = crud.get_fixture_by_id(db, req.fixture_id)
+
     if db_fixture is None:
         return None
-    request = schemas.Request(
-        request_id=str(uuid6.uuid6()),
-        group_id=GROUP_ID,
+    
+    request = broker_schema.Request(
+        request_id=uuid6.uuid6(),
+        group_id=str(GROUP_ID),
         fixture_id=req.fixture_id,
         league_name=db_fixture.league.name,
         round=db_fixture.league.round,
-        date=str(db_fixture.date),
+        date=db_fixture.date,
         result=req.result,
         deposit_token="",
         datetime=datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S UTC"),

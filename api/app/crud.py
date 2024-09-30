@@ -199,14 +199,19 @@ def upsert_request(db: Session, request: broker_schema.Request, user_id: int = N
         return None
     
     if type(request.date) == str:
-        print(request.date)
-        try:
-            request.date = datetime.strptime(request.date, "%Y-%m-%d")
-        except ValueError:
-            request.date = ""
+        if request.date != "":
+            try:
+                request.date = datetime.strptime(request.date, "%Y-%m-%d")
+            except ValueError:
+                request.date = datetime.strptime(db_fixture.date, "%Y-%m-%d")
+        else:
+            request.date = datetime.strptime(db_fixture.date, "%Y-%m-%d")
     
     if type(request.datetime) != str:
-        request.datetime = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S UTC")
+        try:
+            request.datetime = datetime.strptime(request.datetime, "%Y-%m-%dT%H:%M:%S UTC")
+        except ValueError:
+            request.datetime = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S UTC")
 
     if type(request.seller) != int:
         request.seller = 0
@@ -222,6 +227,18 @@ def upsert_request(db: Session, request: broker_schema.Request, user_id: int = N
 
     if type(request.deposit_token) != str:
         request.deposit_token = ""
+
+    if type(request.quantity) != int:
+        try:
+            request.quantity = int(request.quantity)
+        except ValueError:
+            return None
+        
+    if type(request.group_id) != int:
+        try:
+            request.group_id = int(request.group_id)
+        except ValueError:
+            request.group_id = 0
     
     """Create a new request."""
     db_request = models.RequestModel(
@@ -247,9 +264,9 @@ def upsert_request(db: Session, request: broker_schema.Request, user_id: int = N
             db_request.user = db_user
             update_balance(db, db_request.user.id, db_request.quantity * BET_PRICE, add = False)
 
-    if db_fixture:
-        db_request.fixture = db_fixture
-        db_fixture.remaining_bets -= request.quantity
+
+    db_request.fixture = db_fixture
+    db_fixture.remaining_bets -= request.quantity
 
     db.commit()
     db.refresh(db_request)

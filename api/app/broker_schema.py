@@ -68,7 +68,7 @@ class FixtureUpdate(BaseModel):
 
 
 class Request(BaseModel):
-    request_id: str
+    request_id: Union[str, UUID]
     group_id: Union[int, str]
     fixture_id: int
     league_name: str = Field(default="")
@@ -102,8 +102,9 @@ class Request(BaseModel):
         try:
             if isinstance(value, dt):
                 return value.strftime("%Y-%m-%dT%H:%M:%S UTC")
-            return value
-        except:
+            elif isinstance(value, str):
+                return value
+        except ValueError:
             return dt.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S UTC")
     
     @field_validator("deposit_token")
