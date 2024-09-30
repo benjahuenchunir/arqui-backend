@@ -199,13 +199,7 @@ def upsert_request(db: Session, request: broker_schema.Request, user_id: int = N
         return None
     
     if type(request.date) == str:
-        if request.date != "":
-            try:
-                request.date = datetime.strptime(request.date, "%Y-%m-%d")
-            except ValueError:
-                request.date = datetime.strptime(db_fixture.date, "%Y-%m-%d")
-        else:
-            request.date = datetime.strptime(db_fixture.date, "%Y-%m-%d")
+        request.date = db_fixture.date
     
     if type(request.datetime) != str:
         try:
