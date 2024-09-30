@@ -58,15 +58,18 @@ def on_history(payload):
         logging.info("Processing match %s of %s", str(i + 1), str(len(matches)))
         try:
             response = requests.patch(
-                f"http://{API_HOST}:{API_PORT}/{PATH_FIXTURES}/{int(match['id'])}",
+                f"http://{API_HOST}:{API_PORT}/{PATH_FIXTURES}/{int(match['fixture']['id'])}",
                 json=match,
                 headers={"Authorization": f"Bearer {POST_TOKEN}"},
                 timeout=5,
             )
             if response.status_code != 201:
-                logging.error("Failed to post match: %s", response.text)
+                logging.error("Failed to patch match: %s", response.text)
         except requests.exceptions.RequestException as e:
             logging.error("Error patching match: %s", str(e))
+        except KeyError as e:
+            logging.error("Error patching match: %s", str(e))
+            logging.error("Match: %s", match)
     logging.info("All matches processed")
 
 def on_requests(payload):
