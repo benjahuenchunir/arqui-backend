@@ -182,7 +182,10 @@ def update_request(
     token: None = Depends(verify_post_token),
 ):
     """Update a request."""
-    return crud.update_request(db, request_id, request)
+    response = crud.update_request(db, request_id, request)
+    if response is None:
+        raise HTTPException(status_code=404, detail="Request not found")
+    return response
 
 ## /publisher
 @app.get("/publisher")
