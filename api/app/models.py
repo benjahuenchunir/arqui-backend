@@ -145,18 +145,19 @@ class RequestModel(Base):
     __tablename__ = "requests"
 
     id = Column(String, primary_key=True, index=True)
-    group_id = Column(String(255))
+    group_id = Column(Integer)
     fixture_id = Column(Integer, ForeignKey("fixtures.id"))
     league_name = Column(String(255))
     round = Column(String(255))
     date = Column(Date)
     result = Column(String(255))
     deposit_token = Column(String(255))
-    datetime = Column(DateTime)
+    datetime = Column(String(255))
     quantity = Column(Integer)
     seller = Column(Integer)
     
     status = Column(SqlEnum(RequestStatusEnum), default=RequestStatusEnum.PENDING)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True, default=None)
 
     fixture = relationship("FixtureModel", back_populates="requests")
     user = relationship("UserModel", back_populates="requests")
