@@ -128,23 +128,26 @@ async def update_fixture(
 ):
     """Update a fixture."""
     db_fixture = crud.update_fixture(db, fixture_id, fixture)
-
+    
+    if db_fixture is None:
+        raise HTTPException(status_code=404, detail="Fixture not found")
+    
     value = "Draw"
     fixture_result = "---"
-    if fixture.home_team.goals > fixture.away_team.goals:
-        fixture_result = fixture.home_team.name
+    if db_fixture.home_team.goals > db_fixture.away_team.goals:
+        fixture_result = db_fixture.home_team.name
         value = "Home"
-    elif fixture.home_team.goals < fixture.away_team.goals:
-        fixture_result = fixture.away_team.name
+    elif db_fixture.home_team.goals < db_fixture.away_team.goals:
+        fixture_result = db_fixture.away_team.name
         value = "Away"
 
-    for odd in fixture.odds:
+    for odd in db_fixture.odds:
         if odd.name == "Match Winner":
             for v in odd.values:
                 if v.bet == value:
                     odds = v.value
 
-    for bet in fixture.requests:
+    for bet in db_fixture.requests:
         if bet.status == models.RequestStatusEnum.APPROVED and bet.result == fixture_result:
             crud.update_balance(db, bet.user_id, bet.quantity * odds * BET_PRICE, add = True)
     return db_fixture
