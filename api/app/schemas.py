@@ -87,7 +87,7 @@ class Request(BaseModel):
     fixture_id: int
     league_name: str = Field(default="")
     round: str = Field(default="")
-    date: str = Field(default="")
+    date: str = Field(default=None)
     result: str
     deposit_token: str = Field(default="")
     datetime: str = Field(default=datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S UTC"))
