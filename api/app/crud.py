@@ -219,7 +219,7 @@ def upsert_request(db: Session, request: broker_schema.Request, user_id: int = N
     db_fixture = db.query(models.FixtureModel).filter_by(id=request.fixture_id).one_or_none()
     if db_fixture:
         db_request.fixture = db_fixture
-        db_fixture.available_bets -= request.quantity
+        db_fixture.remaining_bets -= request.quantity
 
     db.commit()
     db.refresh(db_request)
@@ -234,7 +234,7 @@ def update_request(db: Session, request_id: str, validation: broker_schema.Reque
         db_request.status = models.RequestStatusEnum.APPROVED
     else:
         db_request.status = models.RequestStatusEnum.REJECTED
-        db_request.fixture.available_bets += db_request.quantity
+        db_request.fixture.remaining_bets += db_request.quantity
         if db_request.user != None:
             update_balance(db, db_request.user.id, db_request.quantity * BET_PRICE, add = True)
 
