@@ -193,7 +193,9 @@ def get_fixture_by_id(db: Session, fixture_id: int):
 
 def upsert_request(db: Session, request: broker_schema.Request, user_id: int = None, group_id: str = None):
 
-    if get_fixture_by_id(db, request.fixture_id) is None:
+    db_fixture = get_fixture_by_id(db, request.fixture_id)
+    
+    if db_fixture is None:
         return None
 
     """Create a new request."""
@@ -220,7 +222,6 @@ def upsert_request(db: Session, request: broker_schema.Request, user_id: int = N
             db_request.user = db_user
             update_balance(db, db_request.user.id, db_request.quantity * BET_PRICE, add = False)
 
-    db_fixture = db.query(models.FixtureModel).filter_by(id=request.fixture_id).one_or_none()
     if db_fixture:
         db_request.fixture = db_fixture
         db_fixture.remaining_bets -= request.quantity
