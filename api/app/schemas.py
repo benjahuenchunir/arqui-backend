@@ -1,6 +1,6 @@
 """Pydantic schema for the API."""
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from typing import List, Optional, Union
 from datetime import datetime as dt, timezone
 
