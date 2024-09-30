@@ -136,16 +136,16 @@ async def update_fixture(
     fixture_result = "---"
     if db_fixture.home_team.goals == None or db_fixture.away_team.goals == None:
         if db_fixture.home_team.goals != None and db_fixture.away_team.goals == None:
-            fixture_result = db_fixture.home_team.name
+            fixture_result = db_fixture.home_team.team.name
             value = "Home"
         elif db_fixture.home_team.goals == None and db_fixture.away_team.goals != None:
-            fixture_result = db_fixture.away_team.name
+            fixture_result = db_fixture.away_team.team.name
             value = "Away"
     elif db_fixture.home_team.goals > db_fixture.away_team.goals:
-        fixture_result = db_fixture.home_team.name
+        fixture_result = db_fixture.home_team.team.name
         value = "Home"
     elif db_fixture.home_team.goals < db_fixture.away_team.goals:
-        fixture_result = db_fixture.away_team.name
+        fixture_result = db_fixture.away_team.team.name
         value = "Away"
 
     for odd in db_fixture.odds:
