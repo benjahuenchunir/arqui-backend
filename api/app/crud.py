@@ -198,7 +198,7 @@ def upsert_request(db: Session, request: broker_schema.Request, user_id: int = N
     if db_fixture is None:
         return None
     
-    if type(request.date) == str:
+    if type(request.date) != datetime:
         request.date = db_fixture.date
     
     if type(request.datetime) != str:
