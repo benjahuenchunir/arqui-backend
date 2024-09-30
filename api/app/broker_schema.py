@@ -67,7 +67,7 @@ class FixtureUpdate(BaseModel):
 
 
 class Request(BaseModel):
-    id: str
+    request_id: str
     group_id: int
     fixture_id: int
     league_name: str

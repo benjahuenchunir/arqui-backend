@@ -144,7 +144,7 @@ class RequestModel(Base):
 
     __tablename__ = "requests"
 
-    id = Column(String, primary_key=True, index=True)
+    request_id = Column(String, primary_key=True, index=True)
     group_id = Column(Integer)
     fixture_id = Column(Integer, ForeignKey("fixtures.id"))
     league_name = Column(String(255))
