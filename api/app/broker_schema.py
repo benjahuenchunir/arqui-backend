@@ -74,21 +74,29 @@ class Request(BaseModel):
     league_name: str = Field(default="")
     round: str = Field(default="")
     date: Union[dt, str] = Field(default="")
-    result: str
+    result: str = Field(default="")
     deposit_token: Optional[str] = Field(default="")
     datetime: Union[dt, str] = Field(default=dt.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S UTC"))
     quantity: int
     seller: int = Field(default=0)
 
+    @field_validator("result")
+    def result_validator(cls, value):
+        if type(value) != str:
+            return ""
+        return value
+
     @field_validator("date")
     def date_validator(cls, value):
-        try:
-            if isinstance(value, str):
-                return dt.strptime(value, "%Y-%m-%d")
+        if isinstance(value, str):
+            try:
+                value = dt.strptime(value, "%Y-%m-%d")
+            except ValueError:
+                value=""
+        elif isinstance(value, dt):
             return value
-        except:
-            return ""
-        
+        return ""
+  
     @field_validator("datetime")
     def datetime_validator(cls, value):
         try:
