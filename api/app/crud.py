@@ -194,7 +194,7 @@ def get_fixture_by_id(db: Session, fixture_id: int):
 def upsert_request(db: Session, request: broker_schema.Request, user_id: int = None, group_id: str = None):
     """Create a new request."""
     db_request = models.RequestModel(
-        id=request.id,
+        id=request.request_id,
         group_id=request.group_id,
         fixture_id=request.fixture_id,
         league_name=request.league_name,
@@ -227,7 +227,7 @@ def upsert_request(db: Session, request: broker_schema.Request, user_id: int = N
 
 def update_request(db: Session, request_id: str, validation: broker_schema.RequestValidation):
     """Update a request."""
-    db_request = db.query(models.RequestModel).filter(models.RequestModel.id == request_id).one_or_none()
+    db_request = db.query(models.RequestModel).filter(models.RequestModel.request_id == request_id).one_or_none()
     if db_request is None:
         return None
     if validation.valid:
