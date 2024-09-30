@@ -3,28 +3,30 @@
 # pylint: disable=W0613
 
 import os
-if os.getenv("ENV") != "production":
-    from dotenv import load_dotenv
-    load_dotenv()
+import sys
+from typing import List, Optional
 
+import requests
 from fastapi import Depends, FastAPI, HTTPException, Request, status
 from fastapi.responses import FileResponse, JSONResponse, RedirectResponse
 from sqlalchemy.orm import Session
-from . import crud, models, schemas, broker_schema, publish
-from .database import engine, session_local
-from typing import Optional, List
-import sys
-import requests
 
+from . import broker_schema, crud, models, publish, schemas
+from .database import engine, session_local
+
+if os.getenv("ENV") != "production":
+    from dotenv import load_dotenv
+
+    load_dotenv()
 POST_TOKEN = os.getenv("POST_TOKEN")
 
-PATH_FIXTURES=os.getenv("PATH_FIXTURES")
-PATH_REQUESTS=os.getenv("PATH_REQUESTS")
+PATH_FIXTURES = os.getenv("PATH_FIXTURES")
+PATH_REQUESTS = os.getenv("PATH_REQUESTS")
 
-PUBLISHER_HOST=os.getenv("PUBLISHER_HOST")
-PUBLISHER_PORT=os.getenv("PUBLISHER_PORT")
+PUBLISHER_HOST = os.getenv("PUBLISHER_HOST")
+PUBLISHER_PORT = os.getenv("PUBLISHER_PORT")
 
-GROUP_ID=os.getenv("GROUP_ID")
+GROUP_ID = os.getenv("GROUP_ID")
 
 BET_PRICE = os.getenv("BET_PRICE")
 
@@ -39,6 +41,7 @@ if not PATH_REQUESTS:
 app = FastAPI()
 
 models.Base.metadata.create_all(bind=engine)
+
 
 def get_db():
     """Get a database session."""
@@ -61,11 +64,13 @@ def favicon():
     """Favicon."""
     return FileResponse("app/favicon.ico")
 
+
 ## /
 @app.get("/")
 def root():
     """Root path."""
     return RedirectResponse(url=PATH_FIXTURES)
+
 
 ## /fixtures
 @app.get(
@@ -86,6 +91,7 @@ def get_fixtures(
         db, page=page, count=count, home=home, away=away, date=date
     )
 
+
 # LISTENER
 @app.post(
     f"/{PATH_FIXTURES}",
@@ -101,9 +107,10 @@ async def upsert_fixture(
     """Upsert a new fixture."""
     return crud.upsert_fixture(db, fixture)
 
+
 ## /fixtures/{fixture_id}
 @app.get(
-    f"/{PATH_FIXTURES}" +"/{fixture_id}",
+    f"/{PATH_FIXTURES}" + "/{fixture_id}",
     response_model=schemas.Fixture,
     status_code=status.HTTP_200_OK,
 )
@@ -113,6 +120,7 @@ def get_fixture(fixture_id: int, db: Session = Depends(get_db)):
     if db_fixture is None:
         raise HTTPException(status_code=404, detail="Fixture not found")
     return db_fixture
+
 
 # LISTENER
 @app.patch(
@@ -128,10 +136,10 @@ async def update_fixture(
 ):
     """Update a fixture."""
     db_fixture = crud.update_fixture(db, fixture_id, fixture)
-    
+
     if db_fixture is None:
         raise HTTPException(status_code=404, detail="Fixture not found")
-    
+
     value = "Draw"
     fixture_result = "---"
     if db_fixture.home_team.goals == None or db_fixture.away_team.goals == None:
@@ -155,35 +163,54 @@ async def update_fixture(
                     odds = v.value
 
     for bet in db_fixture.requests:
-        if bet.status == models.RequestStatusEnum.APPROVED and bet.result == fixture_result:
-            crud.update_balance(db, bet.user_id, bet.quantity * odds * BET_PRICE, add = True)
+        if (
+            bet.status == models.RequestStatusEnum.APPROVED
+            and bet.result == fixture_result
+        ):
+            crud.update_balance(
+                db, bet.user_id, bet.quantity * odds * BET_PRICE, add=True
+            )
     return db_fixture
+
 
 ## /requests
 # LISTENER
+# @app.post(
+#     f"/{PATH_REQUESTS}",
+#     response_model=schemas.Request,
+#     status_code=status.HTTP_201_CREATED,
+# )
+# def upsert_request(
+#     request: broker_schema.Request,
+#     db: Session = Depends(get_db),
+#     token: None = Depends(verify_post_token),
+# ):
+#     if request.group_id != GROUP_ID:
+#         """Create a new request."""
+#         response = crud.upsert_request(db, request, user_id=None, group_id=GROUP_ID)
+
+#         if response is None:
+#             raise HTTPException(status_code=404, detail="Fixture not found")
+
+#         return response
+#     else:
+#         raise HTTPException(status_code=402, detail="Group ID not allowed")
+
+
 @app.post(
     f"/{PATH_REQUESTS}",
-    response_model=schemas.Request,
     status_code=status.HTTP_201_CREATED,
 )
-def upsert_request(
-    request: broker_schema.Request,
-    db: Session = Depends(get_db),
-    token: None = Depends(verify_post_token),
+async def post_publisher_request(
+    db: Session,
+    request: schemas.FrontendRequest,
 ):
-    if request.group_id != GROUP_ID:
-        """Create a new request."""
-        response = crud.upsert_request(db, request, user_id = None, group_id = GROUP_ID)
+    """Post a request to the publisher."""
+    return publish.create_request(db, request)
 
-        if response is None:
-            raise HTTPException(status_code=404, detail="Fixture not found")
-        
-        return response
-    else:
-        raise HTTPException(status_code=402, detail="Group ID not allowed")
 
 ## /requests/{request_id}
-# LISTENER 
+# LISTENER
 @app.patch(
     f"/{PATH_REQUESTS}" + "/{request_id}",
     response_model=schemas.Request,
@@ -201,16 +228,18 @@ def update_request(
         raise HTTPException(status_code=404, detail="Request not found")
     return response
 
+
 ## /publisher
 @app.get("/publisher")
 def get_publisher_status():
     """Get the status of the publisher. To test API-PUBLISHER connection."""
     try:
-        response = requests.get(f"http://{PUBLISHER_HOST}:{PUBLISHER_PORT}")
+        response = requests.get(f"http://{PUBLISHER_HOST}:{PUBLISHER_PORT}", timeout=30)
         response.raise_for_status()
         return JSONResponse(status_code=response.status_code, content=response.json())
     except requests.RequestException as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e
+
 
 @app.get("/test")
 def test_ci():
