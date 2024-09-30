@@ -137,13 +137,13 @@ def update_fixture(
     db_fixture = db.query(models.FixtureModel).filter(models.FixtureModel.id == fixture_id).one_or_none()
     if db_fixture is None:
         return None
-    db_fixture.referee = fixture.referee
-    db_fixture.timezone = fixture.timezone
-    db_fixture.date = fixture.date
-    db_fixture.timestamp = fixture.timestamp
-    db_fixture.status_long = fixture.status.long
-    db_fixture.status_short = fixture.status.short
-    db_fixture.status_elapsed = fixture.status.elapsed
+    db_fixture.referee = fixture.fixture.referee
+    db_fixture.timezone = fixture.fixture.timezone
+    db_fixture.date = fixture.fixture.date
+    db_fixture.timestamp = fixture.fixture.timestamp
+    db_fixture.status_long = fixture.fixture.status.long
+    db_fixture.status_short = fixture.fixture.status.short
+    db_fixture.status_elapsed = fixture.fixture.status.elapsed
 
     db_fixture.home_team.goals = fixture.goals.home
     db_fixture.away_team.goals = fixture.goals.away
