@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import List, Optional
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class Status(BaseModel):
@@ -70,14 +70,14 @@ class Request(BaseModel):
     request_id: str
     group_id: int
     fixture_id: int
-    league_name: str
-    round: str
-    date: str
+    league_name: str = Field(default=None)
+    round: str = Field(default=None)
+    date: str = Field(default=None)
     result: str
-    deposit_token: str
-    datetime: str
+    deposit_token: str = Field(default="")
+    datetime: str = Field(default=datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%S UTC"))
     quantity: int
-    seller: int
+    seller: int = Field(default=0)
 
     class Config:
         from_attributes = True
