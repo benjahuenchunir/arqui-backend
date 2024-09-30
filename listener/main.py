@@ -59,7 +59,16 @@ def on_connect(client, userdata, flags, reason_code, properties):
 
 def on_message(client, userdata, msg):
     """Callback for when a PUBLISH message is received from the server."""
-    payload = json.loads(json.loads(msg.payload.decode("utf-8")))
+    payload = json.loads(msg.payload.decode("utf-8"))
+    try:
+        if isinstance(payload, str):
+            payload = json.loads(payload)
+        elif isinstance(payload, dict):
+            logging.info("Payload is already a dict")
+    except json.JSONDecodeError or TypeError:
+        logging.error("Invalid JSON payload")
+        return
+    
     if msg.topic in TOPICS:
         TOPICS[msg.topic](payload)
     else:
