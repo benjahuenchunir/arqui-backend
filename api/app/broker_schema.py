@@ -68,7 +68,7 @@ class FixtureUpdate(BaseModel):
 
 class Request(BaseModel):
     id: str
-    group_id: str
+    group_id: int
     fixture_id: int
     league_name: str
     round: str
@@ -84,7 +84,7 @@ class Request(BaseModel):
 
 class RequestValidation(BaseModel):
     request_id: str
-    group_id: str
+    group_id: int
     seller: int
     valid: bool
 
