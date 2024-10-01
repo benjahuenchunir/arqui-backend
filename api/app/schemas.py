@@ -119,6 +119,7 @@ class FrontendRequest(BaseModel):
 class Link(BaseModel):
     uid: str
     request_id: str
+    location: str
 
     class Config:
         from_attributes = True
@@ -127,6 +128,25 @@ class Link(BaseModel):
 class FrontendUser(BaseModel):
     uid: str
     email: str
+
+    class Config:
+        from_attributes = True
+
+
+class FrontendRequestResponse(BaseModel):
+    request_id: str
+    status: str
+    quantity: int
+    result: str
+    league_name: str
+
+    class Config:
+        from_attributes = True
+
+
+class FrontendWallet(BaseModel):
+    uid: str
+    amount: float
 
     class Config:
         from_attributes = True

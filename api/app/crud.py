@@ -215,6 +215,32 @@ def get_fixtures(
     )
 
 
+def get_available_fixtures(
+    db: Session,
+    page: int = 0,
+    count: int = 25,
+):
+    """Get available fixtures from the database."""
+
+    HomeTeam = aliased(models.TeamModel)
+    AwayTeam = aliased(models.TeamModel)
+
+    query = (
+        db.query(models.FixtureModel)
+        .join(
+            models.FixtureTeamModel,
+            models.FixtureModel.id == models.FixtureTeamModel.id_fixture,
+        )
+        .join(HomeTeam, models.FixtureModel.id_home_team == HomeTeam.id)
+        .join(AwayTeam, models.FixtureModel.id_away_team == AwayTeam.id)
+    )
+
+    query.filter(models.FixtureModel.status_short == "NS")
+    query.filter(models.FixtureModel.remaining_bets > 0)
+
+    return query.offset(page * count).limit(count).all()
+
+
 def get_fixture_by_id(db: Session, fixture_id: int):
     """Get fixture details by fixture ID."""
     return (
@@ -250,6 +276,8 @@ def upsert_request(
         status=models.RequestStatusEnum.PENDING,
     )
     db.add(db_request)
+
+    db_fixture.remaining_bets -= request.quantity  # type: ignore
 
     # if request.group_id == group_id and user_id:
     #     db_user = db.query(models.UserModel).filter_by(id=user_id).one_or_none()
@@ -294,6 +322,11 @@ def update_request(
 
     else:
         db_request.status = models.RequestStatusEnum.REJECTED
+        db_fixture = (
+            db.query(models.FixtureModel).filter_by(id=db_request.fixture_id).one()
+        )
+        db_fixture.remaining_bets += db_request.quantity
+
         # db_request.fixture.remaining_bets += db_request.quantity
         # if db_request.user != None:
         #     update_balance(
@@ -321,6 +354,8 @@ async def link_request(db: Session, link: schemas.Link):
         return None
 
     db_request.user = db_user
+    db_request.location = link.location  # type: ignore
+
     db.commit()
     db.refresh(db_request)
     return db_request
@@ -344,15 +379,25 @@ def create_user(db: Session, user: schemas.FrontendUser):
     return db_user
 
 
-def update_balance(db: Session, user_id: int, amount: float, add: bool = True):
+def get_user(db: Session, user_id: str):
+    """Get user details by user ID."""
+    return db.query(models.UserModel).filter_by(id=user_id).one_or_none()
+
+
+def get_requests(db: Session, user_id: str):
+    """Get requests by user ID."""
+    return db.query(models.RequestModel).filter_by(user_id=user_id).all()
+
+
+def update_balance(db: Session, user_id: str, amount: float, add: bool = True):
     """Update user wallet."""
     db_user = db.query(models.UserModel).filter_by(id=user_id).one_or_none()
     if db_user is None:
         return None
     if add:
-        db_user.wallet += amount
+        db_user.wallet += amount  # type: ignore
     else:
-        db_user.wallet -= amount
+        db_user.wallet -= amount  # type: ignore
     db.commit()
     db.refresh(db_user)
     return db_user
