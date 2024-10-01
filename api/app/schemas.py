@@ -94,7 +94,7 @@ class User(BaseModel):
 
 class Request(BaseModel):
     request_id: str
-    group_id: str
+    group_id: int
     fixture_id: int
     league_name: str
     round: str
