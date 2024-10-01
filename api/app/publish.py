@@ -38,7 +38,7 @@ def create_request(db: Session, req: schemas.FrontendRequest):
     )
     publish_request(request)
 
-    return request
+    return (req.user_id, request)
 
 
 def publish_request(request: broker_schema.Request):

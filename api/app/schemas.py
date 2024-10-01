@@ -129,7 +129,7 @@ class FrontendRequest(BaseModel):
 
 class Link(BaseModel):
     user_id: int
-    request_id: UUID
+    request_id: str
 
     class Config:
         from_attributes = True

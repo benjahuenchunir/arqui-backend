@@ -2,6 +2,7 @@
 
 # pylint: disable=W0613
 
+import asyncio
 import os
 import sys
 from typing import List, Optional
@@ -204,7 +205,15 @@ async def post_publisher_request(
 ):
     """Post a request to the publisher."""
     response = publish.create_request(db, request)
-    return response if response is not None else HTTPException(status_code=404)
+    if response is None:
+        raise HTTPException(status_code=404, detail="Fixture not found")
+
+    uid, req = response
+    asyncio.create_task(
+        crud.link_request(db, schemas.Link(user_id=uid, request_id=str(req.request_id)))
+    )
+
+    return req
 
 
 ## /requests/{request_id}
@@ -221,22 +230,6 @@ def update_request(
 ):
     """Update a request."""
     response = crud.update_request(db, request_id, request)
-    if response is None:
-        raise HTTPException(status_code=404, detail="Request not found")
-    return response
-
-
-@app.post(
-    f"/{PATH_REQUESTS}/frontend/link",
-    status_code=status.HTTP_201_CREATED,
-    response_model=schemas.Link,
-)
-def link_request(
-    link: schemas.Link,
-    db: Session = Depends(get_db),
-):
-    """Link a request to a user."""
-    response = crud.link_request(db, link)
     if response is None:
         raise HTTPException(status_code=404, detail="Request not found")
     return response

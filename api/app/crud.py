@@ -2,6 +2,7 @@
 
 # pylint: disable=C0103
 
+import asyncio
 import os
 import warnings
 from datetime import datetime, timezone
@@ -294,8 +295,9 @@ def update_request(
     return db_request
 
 
-def link_request(db: Session, link: schemas.Link):
+async def link_request(db: Session, link: schemas.Link):
     """Link a request to a user."""
+    await asyncio.sleep(5)
     db_request = (
         db.query(models.RequestModel)
         .filter(models.RequestModel.request_id == link.request_id)
