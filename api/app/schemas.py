@@ -79,6 +79,7 @@ class Fixture(BaseModel):
     away_team: FixtureTeam
     league: League
     odds: List[Odd] = []
+    remaining_bets: Optional[int] = None
 
     class Config:
         from_attributes = True
