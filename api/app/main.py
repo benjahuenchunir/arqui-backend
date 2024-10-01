@@ -59,6 +59,23 @@ def verify_post_token(request: Request):
     token = request.headers.get("Authorization")
     if token != f"Bearer {POST_TOKEN}":
         raise HTTPException(status_code=403, detail="Forbidden")
+    
+def get_location(request: Request) -> str:
+    """Get the location of the request."""
+    ip = request.client.host
+    url = f"http://ip-api.com/json/{ip}"
+    response = requests.get(url)
+    response.raise_for_status()
+
+    location = "Unknown"
+    if response.status_code == 200:
+        json = response.json()
+        try:
+            if json["status"] == "success":
+                location = f"{json['city']}, {json['regionName']}, {json['country']}"
+        except KeyError:
+            pass
+    return location
 
 
 @app.get("/favicon.ico", include_in_schema=False)
@@ -202,9 +219,10 @@ def upsert_request(
 async def post_publisher_request(
     request: schemas.FrontendRequest,
     db: Session = Depends(get_db),
+    location: Optional[str] = Depends(get_location),
 ):
     """Post a request to the publisher."""
-    response = publish.create_request(db, request)
+    response = publish.create_request(db, request, location)
     if response is None:
         raise HTTPException(status_code=404, detail="Fixture not found")
 

@@ -18,7 +18,7 @@ GROUP_ID = os.getenv("GROUP_ID")
 POST_TOKEN = os.getenv("POST_TOKEN")
 
 
-def create_request(db: Session, req: schemas.FrontendRequest):
+def create_request(db: Session, req: schemas.FrontendRequest, location: str):
     """Create a request."""
     db_fixture = crud.get_fixture_by_id(db, req.fixture_id)
 
@@ -35,6 +35,8 @@ def create_request(db: Session, req: schemas.FrontendRequest):
         result=req.result,
         datetime=datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S UTC"),
         quantity=req.quantity,
+
+        location=location,
     )
     publish_request(request)
 
