@@ -1,7 +1,8 @@
-import requests
-import os
 import logging
+import os
 import sys
+
+import requests
 
 API_HOST = os.getenv("API_HOST")
 API_PORT = os.getenv("API_PORT")
@@ -33,6 +34,7 @@ else:
     logging.error("API_PORT environment variable not set or not an integer")
     sys.exit(1)
 
+
 def on_info(payload):
     """Callback for a message on the info topic."""
     matches = payload["fixtures"]
@@ -50,6 +52,7 @@ def on_info(payload):
         except requests.exceptions.RequestException as e:
             logging.error("Error posting match: %s", str(e))
     logging.info("All matches processed")
+
 
 def on_history(payload):
     """Callback for a message on the history topic."""
@@ -72,6 +75,7 @@ def on_history(payload):
             logging.error("Match: %s", match)
     logging.info("All matches processed")
 
+
 def on_requests(payload):
     """Callback for a message on the requests topic."""
     logging.info("Processing request")
@@ -87,6 +91,7 @@ def on_requests(payload):
     except requests.exceptions.RequestException as e:
         logging.error("Error processing requests: %s", str(e))
 
+
 def on_validation(payload):
     """Callback for a message on the validation topic."""
     logging.info("Processing validation")
@@ -101,5 +106,3 @@ def on_validation(payload):
             logging.error("Failed to post validation: %s", response.text)
     except requests.exceptions.RequestException as e:
         logging.error("Error processing validation: %s", str(e))
-
-

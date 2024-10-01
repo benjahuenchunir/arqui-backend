@@ -79,6 +79,7 @@ class Fixture(BaseModel):
     away_team: FixtureTeam
     league: League
     odds: List[Odd] = []
+    remaining_bets: Optional[int] = None
 
     class Config:
         from_attributes = True
@@ -122,6 +123,14 @@ class FrontendRequest(BaseModel):
     result: str
     quantity: int
     user_id: int
+
+    class Config:
+        from_attributes = True
+
+
+class Link(BaseModel):
+    user_id: int
+    request_id: str
 
     class Config:
         from_attributes = True

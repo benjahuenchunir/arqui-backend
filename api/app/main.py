@@ -2,6 +2,7 @@
 
 # pylint: disable=W0613
 
+import asyncio
 import os
 import sys
 from typing import List, Optional
@@ -18,6 +19,7 @@ if os.getenv("ENV") != "production":
     from dotenv import load_dotenv
 
     load_dotenv()
+
 POST_TOKEN = os.getenv("POST_TOKEN")
 
 PATH_FIXTURES = os.getenv("PATH_FIXTURES")
@@ -162,14 +164,14 @@ async def update_fixture(
                 if v.bet == value:
                     odds = v.value
 
-    for bet in db_fixture.requests:
-        if (
-            bet.status == models.RequestStatusEnum.APPROVED
-            and bet.result == fixture_result
-        ):
-            crud.update_balance(
-                db, bet.user_id, bet.quantity * odds * BET_PRICE, add=True
-            )
+    # for bet in db_fixture.requests:
+    #     if (
+    #         bet.status == models.RequestStatusEnum.APPROVED
+    #         and bet.result == fixture_result
+    #     ):
+    #         crud.update_balance(
+    #             db, bet.user_id, bet.quantity * odds * BET_PRICE, add=True
+    #         )
     return db_fixture
 
 
@@ -177,7 +179,6 @@ async def update_fixture(
 # LISTENER
 @app.post(
     f"/{PATH_REQUESTS}",
-    response_model=schemas.Request,
     status_code=status.HTTP_201_CREATED,
 )
 def upsert_request(
@@ -185,16 +186,13 @@ def upsert_request(
     db: Session = Depends(get_db),
     token: None = Depends(verify_post_token),
 ):
-    if request.group_id != GROUP_ID:
-        """Create a new request."""
-        response = crud.upsert_request(db, request, user_id=None, group_id=GROUP_ID)
+    """Upsert a new request."""
+    response = crud.upsert_request(db, request)
 
-        if response is None:
-            raise HTTPException(status_code=404, detail="Fixture not found")
+    if response is None:
+        raise HTTPException(status_code=404, detail="Fixture not found")
 
-        return response
-    else:
-        raise HTTPException(status_code=402, detail="Group ID not allowed")
+    return response
 
 
 @app.post(
@@ -206,14 +204,22 @@ async def post_publisher_request(
     db: Session = Depends(get_db),
 ):
     """Post a request to the publisher."""
-    return publish.create_request(db, request)
+    response = publish.create_request(db, request)
+    if response is None:
+        raise HTTPException(status_code=404, detail="Fixture not found")
+
+    uid, req = response
+    asyncio.create_task(
+        crud.link_request(db, schemas.Link(user_id=uid, request_id=str(req.request_id)))
+    )
+
+    return req
 
 
 ## /requests/{request_id}
 # LISTENER
 @app.patch(
     f"/{PATH_REQUESTS}" + "/{request_id}",
-    response_model=schemas.Request,
     status_code=status.HTTP_201_CREATED,
 )
 def update_request(
@@ -245,3 +251,9 @@ def get_publisher_status():
 def test_ci():
     """Just to test the CI/CD pipeline. TODO remove this endpoint."""
     return {"message": "Test CI/CD pipeline"}
+
+
+@app.get("/health")
+def health():
+    """Health check."""
+    return {"status": "ok"}

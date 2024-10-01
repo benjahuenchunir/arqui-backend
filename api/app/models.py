@@ -1,28 +1,21 @@
 """SQLAlchemy models for the database."""
 
+import os
 from enum import Enum as PyEnum
-from sqlalchemy import (
-    Enum as SqlEnum,
-    Column,
-    DateTime,
-    Float,
-    ForeignKey,
-    Integer,
-    String,
-    Date,
-    Uuid
-)
+
+from sqlalchemy import Column, Date, DateTime
+from sqlalchemy import Enum as SqlEnum
+from sqlalchemy import Float, ForeignKey, Integer, String, Uuid
 from sqlalchemy.orm import relationship
 
 from .database import Base
-
-import os
 
 BET_LIMMIT = os.getenv("BET_LIMMIT")
 try:
     BET_LIMMIT = int(BET_LIMMIT)
 except:
     BET_LIMMIT = 40
+
 
 class FixtureModel(Base):
     """Base class for fixtures."""
@@ -42,9 +35,11 @@ class FixtureModel(Base):
     id_away_team = Column(Integer, ForeignKey("teams.id"))
 
     remaining_bets = Column(Integer, default=BET_LIMMIT)
-    
+
     league = relationship("LeagueModel", back_populates="fixtures")
-    odds = relationship("OddModel", back_populates="fixture", cascade="all, delete-orphan")
+    odds = relationship(
+        "OddModel", back_populates="fixture", cascade="all, delete-orphan"
+    )
     requests = relationship("RequestModel", back_populates="fixture")
 
     home_team = relationship(
@@ -53,7 +48,7 @@ class FixtureModel(Base):
         foreign_keys="[FixtureTeamModel.id_fixture, FixtureTeamModel.id_team]",
         uselist=False,
         back_populates="home_fixture",
-        overlaps="away_fixture,away_team"
+        overlaps="away_fixture,away_team",
     )
     away_team = relationship(
         "FixtureTeamModel",
@@ -61,8 +56,9 @@ class FixtureModel(Base):
         foreign_keys="[FixtureTeamModel.id_fixture, FixtureTeamModel.id_team]",
         uselist=False,
         back_populates="away_fixture",
-        overlaps="home_fixture,home_team"
+        overlaps="home_fixture,home_team",
     )
+
 
 class LeagueModel(Base):
     """Base class for leagues"""
@@ -79,6 +75,7 @@ class LeagueModel(Base):
 
     fixtures = relationship("FixtureModel", back_populates="league")
 
+
 class TeamModel(Base):
     """Base class for teams"""
 
@@ -90,6 +87,7 @@ class TeamModel(Base):
 
     fixture_teams = relationship("FixtureTeamModel", back_populates="team")
 
+
 class FixtureTeamModel(Base):
     """Base class for fixture teams"""
 
@@ -98,11 +96,12 @@ class FixtureTeamModel(Base):
     id_fixture = Column(Integer, ForeignKey("fixtures.id"), primary_key=True)
     id_team = Column(Integer, ForeignKey("teams.id"), primary_key=True)
     goals = Column(Integer, nullable=True)
-    
+
     team = relationship("TeamModel", back_populates="fixture_teams")
     home_fixture = relationship("FixtureModel", back_populates="home_team")
     away_fixture = relationship("FixtureModel", back_populates="away_team")
-    
+
+
 class OddValueModel(Base):
     """Base class for odd values"""
 
@@ -115,6 +114,7 @@ class OddValueModel(Base):
 
     odds = relationship("OddModel", back_populates="values")
 
+
 class OddModel(Base):
     """Base class for odds"""
 
@@ -125,9 +125,12 @@ class OddModel(Base):
     name = Column(String(255))
 
     fixture = relationship("FixtureModel", back_populates="odds")
-    values = relationship("OddValueModel", back_populates="odds", cascade="all, delete-orphan")
+    values = relationship(
+        "OddValueModel", back_populates="odds", cascade="all, delete-orphan"
+    )
 
-class UserModel(Base): # TODO verify this considering users will be managed with OAuth
+
+class UserModel(Base):  # TODO verify this considering users will be managed with OAuth
     """Base class for users"""
 
     __tablename__ = "users"
@@ -139,10 +142,12 @@ class UserModel(Base): # TODO verify this considering users will be managed with
 
     requests = relationship("RequestModel", back_populates="user")
 
+
 class RequestStatusEnum(PyEnum):
     PENDING = "pending"
     APPROVED = "approved"
     REJECTED = "rejected"
+
 
 class RequestModel(Base):
     """Base class for requests"""
@@ -154,13 +159,13 @@ class RequestModel(Base):
     fixture_id = Column(Integer, ForeignKey("fixtures.id"))
     league_name = Column(String(255), nullable=True)
     round = Column(String(255), nullable=True)
-    date = Column(Date, nullable=True)
+    date = Column(DateTime, nullable=True)
     result = Column(String(255))
     deposit_token = Column(String(255), nullable=True)
     datetime = Column(String(255))
     quantity = Column(Integer)
     seller = Column(Integer, nullable=True)
-    
+
     status = Column(SqlEnum(RequestStatusEnum), default=RequestStatusEnum.PENDING)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=True, default=None)
 
