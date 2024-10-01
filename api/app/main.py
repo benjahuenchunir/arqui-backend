@@ -212,6 +212,10 @@ def upsert_request(
     return response
 
 
+def check_balance(request: schemas.FrontendRequest, db: Session):
+    """Check the balance of the user."""
+
+
 @app.post(
     f"/{PATH_REQUESTS}/frontend",
     status_code=status.HTTP_201_CREATED,
@@ -220,6 +224,7 @@ async def post_publisher_request(
     request: schemas.FrontendRequest,
     db: Session = Depends(get_db),
     location: Optional[str] = Depends(get_location),
+    balance: None = Depends(check_balance),
 ):
     """Post a request to the publisher."""
     response = publish.create_request(db, request, location)
@@ -228,7 +233,7 @@ async def post_publisher_request(
 
     uid, req = response
     asyncio.create_task(
-        crud.link_request(db, schemas.Link(user_id=uid, request_id=str(req.request_id)))
+        crud.link_request(db, schemas.Link(uid=uid, request_id=str(req.request_id)))
     )
 
     return req
@@ -263,6 +268,15 @@ def get_publisher_status():
         return JSONResponse(status_code=response.status_code, content=response.json())
     except requests.RequestException as e:
         raise HTTPException(status_code=500, detail=str(e)) from e
+
+
+@app.post(
+    "/signup",
+    status_code=status.HTTP_201_CREATED,
+)
+def create_user(user: schemas.FrontendUser, db: Session = Depends(get_db)):
+    """Create a new user."""
+    return crud.create_user(db, user)
 
 
 @app.get("/test")
