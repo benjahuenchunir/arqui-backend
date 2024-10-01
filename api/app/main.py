@@ -164,14 +164,14 @@ async def update_fixture(
                 if v.bet == value:
                     odds = v.value
 
-    for bet in db_fixture.requests:
-        if (
-            bet.status == models.RequestStatusEnum.APPROVED
-            and bet.result == fixture_result
-        ):
-            crud.update_balance(
-                db, bet.user_id, bet.quantity * odds * BET_PRICE, add=True
-            )
+    # for bet in db_fixture.requests:
+    #     if (
+    #         bet.status == models.RequestStatusEnum.APPROVED
+    #         and bet.result == fixture_result
+    #     ):
+    #         crud.update_balance(
+    #             db, bet.user_id, bet.quantity * odds * BET_PRICE, add=True
+    #         )
     return db_fixture
 
 
