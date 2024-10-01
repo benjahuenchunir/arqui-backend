@@ -271,11 +271,21 @@ def update_request(
     db: Session, request_id: str, validation: broker_schema.RequestValidation
 ):
     """Update a request."""
+  
+    # if type(validation.group_id) != int:
+    #     try:
+    #         validation.group_id = int(validation.group_id)
+    #     except ValueError:
+    #         validation.group_id = 0
+
+    # validation.request_id = str(validation.request_id)
+    
     db_request = (
         db.query(models.RequestModel)
         .filter(models.RequestModel.request_id == request_id)
         .one_or_none()
     )
+
     if db_request is None:
         return None
 

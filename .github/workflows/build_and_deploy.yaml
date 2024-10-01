@@ -37,24 +37,30 @@ jobs:
         POSTGRES_DB_NAME: ${{ vars.POSTGRES_DB_NAME }}
         POST_TOKEN: ${{ vars.POST_TOKEN }}
         PATH_FIXTURES: ${{ vars.PATH_FIXTURES }}
+        PATH_REQUESTS: ${{ vars.PATH_REQUESTS }}
         MQTT_HOST: ${{ secrets.MQTT_HOST }}
         MQTT_PORT: ${{ secrets.MQTT_PORT }}
         MQTT_USER: ${{ secrets.MQTT_USER }}
         MQTT_PASSWORD: ${{ secrets.MQTT_PASSWORD }}
+        GROUP_ID: ${{ vars.GROUP_ID }}
 
     - name: Install Python
       run: sudo apt-get install -y python3 python3-pip
 
     - name: Install Requests library
       run: pip3 install requests
+    
+    - name: Wait for containers to start
+      run: sleep 20
 
     - name: Run API tests
       run: python3 test_services.py
+      env:
+        PATH_FIXTURES: ${{ vars.PATH_FIXTURES }}
+        ENV: production
 
     - name: Check Listener Logs
-      run: |
-        sleep 10
-        docker-compose logs arquisis-listener | grep "Connected to Broker with result code" || exit 1
+      run: docker-compose logs arquisis-listener | grep "Connected to Broker with result code" || exit 1
 
     - name: Stop containers
       run: docker-compose down

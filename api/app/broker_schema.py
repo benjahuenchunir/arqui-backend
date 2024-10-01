@@ -125,14 +125,21 @@ class Request(BaseModel):
     #     if type(value) != str:
     #         return ""
     #     return value
+    
+    # @field_validator("group_id")
+    # def group_id_validator(cls, value):
+    #     try:
+    #         return str(value)
+    #     except ValueError:
+    #         return "0"
 
     class Config:
         from_attributes = True
 
 
 class RequestValidation(BaseModel):
-    request_id: str
-    group_id: int
+    request_id: Union[str, UUID]
+    group_id: Union[int, str]
     seller: int
     valid: bool
 
