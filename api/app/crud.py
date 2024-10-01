@@ -222,21 +222,11 @@ def get_available_fixtures(
 ):
     """Get available fixtures from the database."""
 
-    HomeTeam = aliased(models.TeamModel)
-    AwayTeam = aliased(models.TeamModel)
-
     query = (
         db.query(models.FixtureModel)
-        .join(
-            models.FixtureTeamModel,
-            models.FixtureModel.id == models.FixtureTeamModel.id_fixture,
-        )
-        .join(HomeTeam, models.FixtureModel.id_home_team == HomeTeam.id)
-        .join(AwayTeam, models.FixtureModel.id_away_team == AwayTeam.id)
+        .filter(models.FixtureModel.status_short == "NS")
+        .filter(models.FixtureModel.remaining_bets > 0)
     )
-
-    query.filter(models.FixtureModel.status_short == "NS")
-    query.filter(models.FixtureModel.remaining_bets > 0)
 
     return query.offset(page * count).limit(count).all()
 
