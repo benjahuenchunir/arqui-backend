@@ -1,10 +1,11 @@
 """ Logic for publishing requests. """
 
 import os
+import uuid
 from datetime import datetime, timezone
 
 import requests
-import uuid6
+from requests.exceptions import RequestException
 from sqlalchemy.orm import Session
 
 from . import broker_schema, crud, schemas
@@ -23,23 +24,21 @@ def create_request(db: Session, req: schemas.FrontendRequest):
 
     if db_fixture is None:
         return None
-    
+
     request = broker_schema.Request(
-        request_id=uuid6.uuid6(),
+        request_id=uuid.uuid4(),
         group_id=str(GROUP_ID),
         fixture_id=req.fixture_id,
         league_name=db_fixture.league.name,
         round=db_fixture.league.round,
-        date=db_fixture.date,
+        date=db_fixture.date,  # type: ignore
         result=req.result,
-        deposit_token="",
         datetime=datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S UTC"),
         quantity=req.quantity,
-        seller=0,
     )
-    if publish_request(request):
-        return crud.upsert_request(db, request, user_id=req.user_id, group_id=GROUP_ID)
-    return None
+    publish_request(request)
+
+    return (req.user_id, request)
 
 
 def publish_request(request: broker_schema.Request):
@@ -50,7 +49,11 @@ def publish_request(request: broker_schema.Request):
         "Content-Type": "application/json",
         "Authorization": f"Bearer {POST_TOKEN}",
     }
-    response = requests.post(url, data=request.model_dump_json(), headers=headers)
-    if response.status_code != 201:
-        raise Exception(f"Failed to publish request: {response.text}")
-    return response.json()
+    response = requests.post(
+        url,
+        json={"payload": request.model_dump_json()},
+        headers=headers,
+        timeout=30,
+    )
+    if response.status_code != 200:
+        raise RequestException(response.text)

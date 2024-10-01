@@ -125,3 +125,11 @@ class FrontendRequest(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class Link(BaseModel):
+    user_id: int
+    request_id: str
+
+    class Config:
+        from_attributes = True
