@@ -32,13 +32,13 @@ def check_service(name, url):
         response = requests.get(url, headers=headers)
         if response.status_code == 200:
             print(f"{name} are running.")
+            return True
         else:
             print(f"{name} are not running. Status code: {response.status_code}")
             return False
     except requests.RequestException as e:
         print(f"{name} are not running. Error: {e}")
         return False
-    return True
 
 def assert_redirection(url, expected_endpoint):
     """
@@ -53,7 +53,7 @@ def assert_redirection(url, expected_endpoint):
     assert response.headers["location"] == expected_endpoint
 
 if __name__ == "__main__":
-    time.sleep(2)
+    time.sleep(3)
     if not check_service("API-PUBLISHER", "http://localhost:8001/publisher"):
         sys.exit(1)
     
