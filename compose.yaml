@@ -24,9 +24,15 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@arquisis-database:5432/${POSTGRES_DB_NAME}
       POST_TOKEN: ${POST_TOKEN}
       PATH_FIXTURES: ${PATH_FIXTURES}
+      PATH_REQUESTS: ${PATH_REQUESTS}
 
       PUBLISHER_HOST: arquisis-publisher
       PUBLISHER_PORT: 7999
+
+      GROUP_ID: ${GROUP_ID}
+
+      BET_PRICE: 1000
+      BET_LIMIT: 40
     deploy:
       replicas: 3
       restart_policy:
@@ -48,6 +54,7 @@ services:
       MQTT_PASSWORD: ${MQTT_PASSWORD}
 
       PATH_FIXTURES: ${PATH_FIXTURES}
+      PATH_REQUESTS: ${PATH_REQUESTS}
       POST_TOKEN: ${POST_TOKEN}
       API_HOST: arquisis-api
       API_PORT: 8000

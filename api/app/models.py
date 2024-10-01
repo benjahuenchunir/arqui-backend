@@ -9,10 +9,20 @@ from sqlalchemy import (
     ForeignKey,
     Integer,
     String,
+    Date,
+    Uuid
 )
 from sqlalchemy.orm import relationship
 
 from .database import Base
+
+import os
+
+BET_LIMMIT = os.getenv("BET_LIMMIT")
+try:
+    BET_LIMMIT = int(BET_LIMMIT)
+except:
+    BET_LIMMIT = 40
 
 class FixtureModel(Base):
     """Base class for fixtures."""
@@ -30,9 +40,13 @@ class FixtureModel(Base):
     id_league = Column(Integer, ForeignKey("leagues.id"))
     id_home_team = Column(Integer, ForeignKey("teams.id"))
     id_away_team = Column(Integer, ForeignKey("teams.id"))
+
+    remaining_bets = Column(Integer, default=BET_LIMMIT)
     
     league = relationship("LeagueModel", back_populates="fixtures")
     odds = relationship("OddModel", back_populates="fixture", cascade="all, delete-orphan")
+    requests = relationship("RequestModel", back_populates="fixture")
+
     home_team = relationship(
         "FixtureTeamModel",
         primaryjoin="and_(FixtureModel.id == FixtureTeamModel.id_fixture, FixtureModel.id_home_team == FixtureTeamModel.id_team)",
@@ -121,6 +135,7 @@ class UserModel(Base): # TODO verify this considering users will be managed with
     id = Column(Integer, primary_key=True, index=True)
     username = Column(String(255))
     password = Column(String(255))
+    wallet = Column(Float, default=0)
 
     requests = relationship("RequestModel", back_populates="user")
 
@@ -134,10 +149,20 @@ class RequestModel(Base):
 
     __tablename__ = "requests"
 
-    id_user = Column(Integer, ForeignKey("users.id"), primary_key=True)
-    id_fixture = Column(Integer, ForeignKey("fixtures.id"), primary_key=True)
+    request_id = Column(String(255), primary_key=True, index=True)
+    group_id = Column(Integer)
+    fixture_id = Column(Integer, ForeignKey("fixtures.id"))
+    league_name = Column(String(255), nullable=True)
+    round = Column(String(255), nullable=True)
+    date = Column(Date, nullable=True)
     result = Column(String(255))
-    price = Column(Float)
+    deposit_token = Column(String(255), nullable=True)
+    datetime = Column(String(255))
+    quantity = Column(Integer)
+    seller = Column(Integer, nullable=True)
+    
     status = Column(SqlEnum(RequestStatusEnum), default=RequestStatusEnum.PENDING)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True, default=None)
 
+    fixture = relationship("FixtureModel", back_populates="requests")
     user = relationship("UserModel", back_populates="requests")
