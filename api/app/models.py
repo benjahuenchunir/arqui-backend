@@ -130,14 +130,13 @@ class OddModel(Base):
     )
 
 
-class UserModel(Base):  # TODO verify this considering users will be managed with OAuth
+class UserModel(Base):
     """Base class for users"""
 
     __tablename__ = "users"
 
-    id = Column(Integer, primary_key=True, index=True)
-    username = Column(String(255))
-    password = Column(String(255))
+    id = Column(String, primary_key=True, index=True)
+    email = Column(String(255), unique=True, index=True)
     wallet = Column(Float, default=0)
 
     requests = relationship("RequestModel", back_populates="user")
@@ -167,7 +166,7 @@ class RequestModel(Base):
     seller = Column(Integer, nullable=True)
 
     status = Column(SqlEnum(RequestStatusEnum), default=RequestStatusEnum.PENDING)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=True, default=None)
+    user_id = Column(String, ForeignKey("users.id"), nullable=True, default=None)
 
     fixture = relationship("FixtureModel", back_populates="requests")
     user = relationship("UserModel", back_populates="requests")

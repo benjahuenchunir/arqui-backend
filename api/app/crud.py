@@ -271,7 +271,7 @@ def update_request(
     db: Session, request_id: str, validation: broker_schema.RequestValidation
 ):
     """Update a request."""
-  
+
     # if type(validation.group_id) != int:
     #     try:
     #         validation.group_id = int(validation.group_id)
@@ -279,7 +279,7 @@ def update_request(
     #         validation.group_id = 0
 
     # validation.request_id = str(validation.request_id)
-    
+
     db_request = (
         db.query(models.RequestModel)
         .filter(models.RequestModel.request_id == request_id)
@@ -316,7 +316,7 @@ async def link_request(db: Session, link: schemas.Link):
     if db_request is None:
         return None
 
-    db_user = db.query(models.UserModel).filter_by(id=link.user_id).one_or_none()
+    db_user = db.query(models.UserModel).filter_by(id=link.uid).one_or_none()
     if db_user is None:
         return None
 
@@ -324,6 +324,24 @@ async def link_request(db: Session, link: schemas.Link):
     db.commit()
     db.refresh(db_request)
     return db_request
+
+
+def create_user(db: Session, user: schemas.FrontendUser):
+    """Create a new user."""
+    # Check if user already exists
+    db_user = db.query(models.UserModel).filter_by(id=user.uid).one_or_none()
+
+    if db_user:
+        return db_user
+
+    db_user = models.UserModel(
+        id=user.uid,
+        email=user.email,
+    )
+    db.add(db_user)
+    db.commit()
+    db.refresh(db_user)
+    return db_user
 
 
 def update_balance(db: Session, user_id: int, amount: float, add: bool = True):
