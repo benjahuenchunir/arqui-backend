@@ -82,7 +82,7 @@ class Request(BaseModel):
     """Request model for the broker."""
 
     request_id: UUID
-    group_id: str
+    group_id: Union[str, int]
     fixture_id: int
     league_name: str
     round: str

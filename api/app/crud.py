@@ -11,7 +11,7 @@ from sqlalchemy.exc import SAWarning
 from sqlalchemy.orm import Session, aliased
 from sqlalchemy.sql import func
 
-from . import broker_schema, models
+from . import broker_schema, models, schemas
 
 warnings.filterwarnings("ignore", category=SAWarning)
 
@@ -289,6 +289,26 @@ def update_request(
         #         db, db_request.user.id, db_request.quantity * BET_PRICE, add=True
         #     )
 
+    db.commit()
+    db.refresh(db_request)
+    return db_request
+
+
+def link_request(db: Session, link: schemas.Link):
+    """Link a request to a user."""
+    db_request = (
+        db.query(models.RequestModel)
+        .filter(models.RequestModel.request_id == link.request_id)
+        .one_or_none()
+    )
+    if db_request is None:
+        return None
+
+    db_user = db.query(models.UserModel).filter_by(id=link.user_id).one_or_none()
+    if db_user is None:
+        return None
+
+    db_request.user = db_user
     db.commit()
     db.refresh(db_request)
     return db_request

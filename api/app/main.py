@@ -226,6 +226,22 @@ def update_request(
     return response
 
 
+@app.post(
+    f"/{PATH_REQUESTS}/frontend/link",
+    status_code=status.HTTP_201_CREATED,
+    response_model=schemas.Link,
+)
+def link_request(
+    link: schemas.Link,
+    db: Session = Depends(get_db),
+):
+    """Link a request to a user."""
+    response = crud.link_request(db, link)
+    if response is None:
+        raise HTTPException(status_code=404, detail="Request not found")
+    return response
+
+
 ## /publisher
 @app.get("/publisher")
 def get_publisher_status():
@@ -242,3 +258,9 @@ def get_publisher_status():
 def test_ci():
     """Just to test the CI/CD pipeline. TODO remove this endpoint."""
     return {"message": "Test CI/CD pipeline"}
+
+
+@app.get("/health")
+def health():
+    """Health check."""
+    return {"status": "ok"}
