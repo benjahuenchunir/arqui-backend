@@ -125,7 +125,7 @@ class Request(BaseModel):
     #     if type(value) != str:
     #         return ""
     #     return value
-    
+
     # @field_validator("group_id")
     # def group_id_validator(cls, value):
     #     try:

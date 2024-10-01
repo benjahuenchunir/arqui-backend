@@ -102,7 +102,7 @@ def on_validation(payload):
             headers={"Authorization": f"Bearer {POST_TOKEN}"},
             timeout=5,
         )
-        if response.status_code != 201:
+        if response.status_code != 200:
             logging.error("Failed to post validation: %s", response.text)
     except requests.exceptions.RequestException as e:
         logging.error("Error processing validation: %s", str(e))
