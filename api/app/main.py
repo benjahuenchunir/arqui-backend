@@ -18,6 +18,7 @@ if os.getenv("ENV") != "production":
     from dotenv import load_dotenv
 
     load_dotenv()
+
 POST_TOKEN = os.getenv("POST_TOKEN")
 
 PATH_FIXTURES = os.getenv("PATH_FIXTURES")
@@ -177,7 +178,6 @@ async def update_fixture(
 # LISTENER
 @app.post(
     f"/{PATH_REQUESTS}",
-    response_model=schemas.Request,
     status_code=status.HTTP_201_CREATED,
 )
 def upsert_request(
@@ -185,16 +185,13 @@ def upsert_request(
     db: Session = Depends(get_db),
     token: None = Depends(verify_post_token),
 ):
-    if request.group_id != GROUP_ID:
-        """Create a new request."""
-        response = crud.upsert_request(db, request, user_id=None, group_id=GROUP_ID)
+    """Upsert a new request."""
+    response = crud.upsert_request(db, request)
 
-        if response is None:
-            raise HTTPException(status_code=404, detail="Fixture not found")
+    if response is None:
+        raise HTTPException(status_code=404, detail="Fixture not found")
 
-        return response
-    else:
-        raise HTTPException(status_code=402, detail="Group ID not allowed")
+    return response
 
 
 @app.post(
@@ -206,14 +203,14 @@ async def post_publisher_request(
     db: Session = Depends(get_db),
 ):
     """Post a request to the publisher."""
-    return publish.create_request(db, request)
+    response = publish.create_request(db, request)
+    return response if response is not None else HTTPException(status_code=404)
 
 
 ## /requests/{request_id}
 # LISTENER
 @app.patch(
     f"/{PATH_REQUESTS}" + "/{request_id}",
-    response_model=schemas.Request,
     status_code=status.HTTP_201_CREATED,
 )
 def update_request(

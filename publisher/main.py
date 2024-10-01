@@ -2,17 +2,18 @@
 
 # pylint: disable=W0613
 
+import logging
 import os
-import logging
 import sys
-from fastapi import Depends, FastAPI, HTTPException, Request
+
 import paho.mqtt.publish as publish
-from pydantic import BaseModel
+from fastapi import Depends, FastAPI, HTTPException, Request, status
 from fastapi.responses import JSONResponse
-import logging
+from pydantic import BaseModel
 
 if os.getenv("ENV") != "production":
     from dotenv import load_dotenv
+
     load_dotenv()
 
 logging.basicConfig(level=logging.INFO)
@@ -37,40 +38,45 @@ if not POST_TOKEN:
     logging.error("POST_TOKEN environment variable not set")
     sys.exit(1)
 
-class Msg(BaseModel):
-    data: str
 
-def verify_post_token(request: Request, post_token: str):
+class Msg(BaseModel):
+    payload: str
+
+
+def verify_post_token(request: Request):
     """Verify the POST token."""
     token = request.headers.get("Authorization")
-    if token != f"Bearer {post_token}":
+    if token != f"Bearer {POST_TOKEN}":
         raise HTTPException(status_code=403, detail="Forbidden")
 
+
 app = FastAPI()
+
 
 @app.get("/")
 async def root():
     """Root endpoint. Just to show example API-PUBLISHER connection."""
     return {"message": "Publisher is running"}
 
+
 @app.post("/")
 async def publish_message(
     request: Msg,
-    token: None = Depends(lambda req: verify_post_token(req, POST_TOKEN))
+    status_code=status.HTTP_200_OK,
+    token: None = Depends(verify_post_token),
 ):
-    message = request.data
+    """Publish a message to the MQTT broker."""
+    message = request.payload
     try:
         publish.single(
-            "fixtures/requests", 
-            message, 
-            hostname=HOST,
-            port=PORT,
-            auth={
-                "username": USER,
-                "password": PASS
-            }
+            "fixtures/requests",
+            payload=message,
+            hostname=HOST,  # type: ignore
+            port=PORT,  # type: ignore
+            auth={"username": USER, "password": PASS},  # type: ignore
         )
-        return JSONResponse(status_code=200, content={"message": "Message published successfully"})
     except Exception as e:
-        logging.error("Error publishing message: %s", str(e))
-        return JSONResponse(status_code=500, content={"error": str(e)})
+        logging.error(f"Failed to publish message: {e}")
+        return JSONResponse(
+            status_code=500, content={"message": "Failed to publish message"}
+        )
