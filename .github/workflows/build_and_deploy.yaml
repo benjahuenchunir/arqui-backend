@@ -47,14 +47,18 @@ jobs:
 
     - name: Install Requests library
       run: pip3 install requests
+    
+    - name: Wait for containers to start
+      run: sleep 20
 
     - name: Run API tests
       run: python3 test_services.py
+      env:
+        PATH_FIXTURES: ${{ vars.PATH_FIXTURES }}
+        ENV: production
 
     - name: Check Listener Logs
-      run: |
-        sleep 10
-        docker-compose logs arquisis-listener | grep "Connected to Broker with result code" || exit 1
+      run: docker-compose logs arquisis-listener | grep "Connected to Broker with result code" || exit 1
 
     - name: Stop containers
       run: docker-compose down
