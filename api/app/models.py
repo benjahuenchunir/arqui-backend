@@ -168,5 +168,7 @@ class RequestModel(Base):
     status = Column(SqlEnum(RequestStatusEnum), default=RequestStatusEnum.PENDING)
     user_id = Column(String, ForeignKey("users.id"), nullable=True, default=None)
 
+    location = Column(String(255), nullable=True)
+
     fixture = relationship("FixtureModel", back_populates="requests")
     user = relationship("UserModel", back_populates="requests")
