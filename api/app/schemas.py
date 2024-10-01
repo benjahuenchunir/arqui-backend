@@ -1,5 +1,7 @@
 """Pydantic schema for the API."""
 
+# pylint: disable=missing-docstring
+
 from datetime import datetime as dt
 from datetime import timezone
 from typing import List, Optional, Union
@@ -85,14 +87,6 @@ class Fixture(BaseModel):
         from_attributes = True
 
 
-class User(BaseModel):
-    id: int
-    username: str
-
-    class Config:
-        from_attributes = True
-
-
 class Request(BaseModel):
     request_id: str
     group_id: int
@@ -106,13 +100,7 @@ class Request(BaseModel):
     quantity: int
     seller: int
 
-    class Config:
-        from_attributes = True
-
-
-class OwnRequest(BaseModel):
-    request: Request
-    user: User
+    location: str
 
     class Config:
         from_attributes = True
@@ -122,15 +110,43 @@ class FrontendRequest(BaseModel):
     fixture_id: int
     result: str
     quantity: int
-    user_id: int
+    uid: str
 
     class Config:
         from_attributes = True
 
 
 class Link(BaseModel):
-    user_id: int
+    uid: str
     request_id: str
+    location: str
+
+    class Config:
+        from_attributes = True
+
+
+class FrontendUser(BaseModel):
+    uid: str
+    email: str
+
+    class Config:
+        from_attributes = True
+
+
+class FrontendRequestResponse(BaseModel):
+    request_id: str
+    status: str
+    quantity: int
+    result: str
+    league_name: str
+
+    class Config:
+        from_attributes = True
+
+
+class FrontendWallet(BaseModel):
+    uid: str
+    amount: float
 
     class Config:
         from_attributes = True
