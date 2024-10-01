@@ -100,6 +100,8 @@ class Request(BaseModel):
     quantity: int
     seller: int
 
+    location: str
+
     class Config:
         from_attributes = True
 
