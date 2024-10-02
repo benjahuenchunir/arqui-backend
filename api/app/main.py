@@ -157,9 +157,13 @@ def get_fixtures(
     response_model=List[schemas.Fixture],
     status_code=status.HTTP_200_OK,
 )
-def get_available_fixtures(db: Session = Depends(get_db)):
+def get_available_fixtures(
+    db: Session = Depends(get_db),
+    page: int = 0,
+    count: int = 25,
+):
     """Get available fixtures."""
-    return crud.get_available_fixtures(db)
+    return crud.get_available_fixtures(db, page=page, count=count)
 
 
 # GET /fixtures/{fixture_id}
