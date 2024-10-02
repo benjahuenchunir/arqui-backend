@@ -3,7 +3,7 @@
 import os
 from enum import Enum as PyEnum
 
-from sqlalchemy import Column, Date, DateTime
+from sqlalchemy import Boolean, Column, Date, DateTime
 from sqlalchemy import Enum as SqlEnum
 from sqlalchemy import Float, ForeignKey, Integer, String, Uuid
 from sqlalchemy.orm import relationship
@@ -167,6 +167,8 @@ class RequestModel(Base):
 
     status = Column(SqlEnum(RequestStatusEnum), default=RequestStatusEnum.PENDING)
     user_id = Column(String, ForeignKey("users.id"), nullable=True, default=None)
+
+    paid = Column(Boolean, default=False)
 
     location = Column(String(255), nullable=True)
 

@@ -203,7 +203,7 @@ async def upsert_fixture(
     response_model=schemas.Fixture,
     status_code=status.HTTP_201_CREATED,
 )
-async def update_fixture(
+def update_fixture(
     fixture_id: int,
     fixture: broker_schema.FixtureUpdate,
     db: Session = Depends(get_db),
@@ -215,27 +215,29 @@ async def update_fixture(
     if db_fixture is None:
         raise HTTPException(status_code=404, detail="Fixture not found")
 
-    value = "Draw"
-    fixture_result = "---"
-    if db_fixture.home_team.goals == None or db_fixture.away_team.goals == None:
-        if db_fixture.home_team.goals != None and db_fixture.away_team.goals == None:
-            fixture_result = db_fixture.home_team.team.name
-            value = "Home"
-        elif db_fixture.home_team.goals == None and db_fixture.away_team.goals != None:
-            fixture_result = db_fixture.away_team.team.name
-            value = "Away"
-    elif db_fixture.home_team.goals > db_fixture.away_team.goals:
-        fixture_result = db_fixture.home_team.team.name
-        value = "Home"
-    elif db_fixture.home_team.goals < db_fixture.away_team.goals:
-        fixture_result = db_fixture.away_team.team.name
-        value = "Away"
+    crud.pay_bets(db, fixture_id)
 
-    for odd in db_fixture.odds:
-        if odd.name == "Match Winner":
-            for v in odd.values:
-                if v.bet == value:
-                    odds = v.value
+    # value = "Draw"
+    # fixture_result = "---"
+    # if db_fixture.home_team.goals == None or db_fixture.away_team.goals == None:
+    #     if db_fixture.home_team.goals != None and db_fixture.away_team.goals == None:
+    #         fixture_result = db_fixture.home_team.team.name
+    #         value = "Home"
+    #     elif db_fixture.home_team.goals == None and db_fixture.away_team.goals != None:
+    #         fixture_result = db_fixture.away_team.team.name
+    #         value = "Away"
+    # elif db_fixture.home_team.goals > db_fixture.away_team.goals:
+    #     fixture_result = db_fixture.home_team.team.name
+    #     value = "Home"
+    # elif db_fixture.home_team.goals < db_fixture.away_team.goals:
+    #     fixture_result = db_fixture.away_team.team.name
+    #     value = "Away"
+
+    # for odd in db_fixture.odds:
+    #     if odd.name == "Match Winner":
+    #         for v in odd.values:
+    #             if v.bet == value:
+    #                 odds = v.value
 
     # for bet in db_fixture.requests:
     #     if (
@@ -353,6 +355,7 @@ def create_user(user: schemas.FrontendUser, db: Session = Depends(get_db)):
     """Create a new user."""
     return crud.create_user(db, user)
 
+
 # GET /wallet/{uid}
 @app.get(
     "/wallet/{uid}",
@@ -364,6 +367,7 @@ def get_wallet(uid: str, db: Session = Depends(get_db)):
     if user is None:
         raise HTTPException(status_code=404, detail="User not found")
     return {"balance": user.wallet}
+
 
 # PATCH /wallet
 @app.patch(

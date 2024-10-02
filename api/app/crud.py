@@ -391,3 +391,52 @@ def update_balance(db: Session, user_id: str, amount: float, add: bool = True):
     db.commit()
     db.refresh(db_user)
     return db_user
+
+
+def pay_bets(db: Session, fixture_id: int):
+    """Pay bets for a finished fixture."""
+
+    db_fixture = get_fixture_by_id(db, fixture_id)
+
+    if db_fixture is None:
+        return None
+
+    db_requests = (
+        db.query(models.RequestModel)
+        .filter(models.RequestModel.fixture_id == fixture_id)
+        .filter(models.RequestModel.status == models.RequestStatusEnum.APPROVED)
+        .filter(models.RequestModel.group_id == 2)
+        .all()
+    )
+
+    if not db_requests:
+        return None
+
+    for db_request in db_requests:
+        if db_request.paid:
+            continue
+
+        db_user = db.query(models.UserModel).filter_by(id=db_request.user_id).one()
+        if db_request.result == db_fixture.home_team.name:
+            mult = db_fixture.odds[0].values[0].value
+        elif db_request.result == db_fixture.away_team.name:
+            mult = db_fixture.odds[0].values[2].value
+        else:
+            mult = db_fixture.odds[0].values[1].value
+
+        amount = db_request.quantity * mult * BET_PRICE
+
+        if db_fixture.home_team.goals > db_fixture.away_team.goals:
+            wwinner = db_fixture.home_team.name
+        elif db_fixture.home_team.goals < db_fixture.away_team.goals:
+            wwinner = db_fixture.away_team.name
+        else:
+            wwinner = "---"
+
+        if wwinner == db_request.result:
+            update_balance(db, db_user.id, amount, add=True)
+
+        db_request.paid = True
+
+    db.commit()
+    return db_requests
