@@ -60,7 +60,7 @@ def verify_post_token(request: Request):
     if token != f"Bearer {POST_TOKEN}":
         raise HTTPException(status_code=403, detail="Invalid token")
 
-        
+
 def get_location(request: Request) -> str:
     """Get the location of the request."""
     ip = request.client.host
@@ -78,7 +78,7 @@ def get_location(request: Request) -> str:
             pass
     return location
 
-  
+
 def check_balance(request: schemas.FrontendRequest):
     """Check the balance of the user."""
     db: Session = next(get_db())
@@ -273,8 +273,8 @@ async def post_publisher_request(
     request: schemas.FrontendRequest,
     db: Session = Depends(get_db),
     location: str = Depends(get_location),
-    balance: None = Depends(check_balance),
     bets: None = Depends(check_bets),
+    balance: None = Depends(check_balance),
 ):
     """Post a request to the publisher."""
     response = publish.create_request(db, request, location)
