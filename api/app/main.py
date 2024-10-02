@@ -353,6 +353,17 @@ def create_user(user: schemas.FrontendUser, db: Session = Depends(get_db)):
     """Create a new user."""
     return crud.create_user(db, user)
 
+# GET /wallet/{uid}
+@app.get(
+    "/wallet/{uid}",
+    status_code=status.HTTP_200_OK,
+)
+def get_wallet(uid: str, db: Session = Depends(get_db)):
+    """Get the wallet of the user."""
+    user = crud.get_user(db, uid)
+    if user is None:
+        raise HTTPException(status_code=404, detail="User not found")
+    return {"balance": user.wallet}
 
 # PATCH /wallet
 @app.patch(
