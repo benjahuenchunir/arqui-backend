@@ -12,14 +12,15 @@ from sqlalchemy.exc import SAWarning
 from sqlalchemy.orm import Session, aliased
 from sqlalchemy.sql import func
 
-from . import broker_schema, models, schemas
+from . import _schemas, broker_schema, models
+from .schemas import request_schemas
 
 warnings.filterwarnings("ignore", category=SAWarning)
 
 BET_PRICE = os.getenv("BET_PRICE")
 
 
-def upsert_fixture(db: Session, fixture: broker_schema.WholeFixture):
+def upsert_fixture(db: Session, fixture: request_schemas.WholeFixture):
     """Upsert a fixture."""
 
     # Upsert FixtureModel
@@ -328,7 +329,7 @@ def update_request(
     return db_request
 
 
-async def link_request(db: Session, link: schemas.Link):
+async def link_request(db: Session, link: _schemas.Link):
     """Link a request to a user."""
     await asyncio.sleep(5)
     db_request = (
@@ -351,7 +352,7 @@ async def link_request(db: Session, link: schemas.Link):
     return db_request
 
 
-def create_user(db: Session, user: schemas.FrontendUser):
+def create_user(db: Session, user: _schemas.FrontendUser):
     """Create a new user."""
     # Check if user already exists
     db_user = db.query(models.UserModel).filter_by(id=user.uid).one_or_none()
