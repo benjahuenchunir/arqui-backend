@@ -3,9 +3,10 @@
 # pylint: disable=missing-docstring
 
 from datetime import datetime as dt
-from typing import List, Optional
+from typing import List, Optional, Union
+from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class Team(BaseModel):
@@ -75,6 +76,35 @@ class AvailableFixture(BaseModel):
     odds: List[Odd] = []
     league: League
     remaining_bets: Optional[int] = None
+
+    class Config:
+        from_attributes = True
+
+
+class RequestShort(BaseModel):
+    request_id: str
+    status: str
+    quantity: int
+    result: str
+    league_name: str
+
+    class Config:
+        from_attributes = True
+
+
+class Request(BaseModel):
+    request_id: UUID
+    group_id: Union[str, int]
+    fixture_id: int
+    league_name: str
+    round: str
+    date: dt
+    result: str
+    deposit_token: str = Field(default="")
+    datetime: str
+    quantity: int
+    seller: int = Field(default=0)
+    location: Optional[str] = None
 
     class Config:
         from_attributes = True

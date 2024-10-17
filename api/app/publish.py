@@ -9,6 +9,7 @@ from requests.exceptions import RequestException
 from sqlalchemy.orm import Session
 
 from . import _schemas, broker_schema, crud
+from .schemas import request_schemas, response_schemas
 
 PUBLISHER_HOST = os.getenv("PUBLISHER_HOST")
 PUBLISHER_PORT = os.getenv("PUBLISHER_PORT")
@@ -18,14 +19,14 @@ GROUP_ID = os.getenv("GROUP_ID")
 POST_TOKEN = os.getenv("POST_TOKEN")
 
 
-def create_request(db: Session, req: _schemas.FrontendRequest, location: str):
+def create_request(db: Session, req: request_schemas.RequestShort, location: str):
     """Create a request."""
     db_fixture = crud.get_fixture_by_id(db, req.fixture_id)
 
     if db_fixture is None:
         return None
 
-    request = broker_schema.Request(
+    request = response_schemas.Request(
         request_id=uuid.uuid4(),
         group_id=str(GROUP_ID),
         fixture_id=req.fixture_id,
@@ -42,7 +43,7 @@ def create_request(db: Session, req: _schemas.FrontendRequest, location: str):
     return (req.uid, request)
 
 
-def publish_request(request: broker_schema.Request):
+def publish_request(request: response_schemas.Request):
     """Publish a request."""
     # Publish the request to the broker
     url = f"http://{PUBLISHER_HOST}:{PUBLISHER_PORT}/"

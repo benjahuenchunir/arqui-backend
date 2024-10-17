@@ -151,7 +151,7 @@ def upsert_fixture(db: Session, fixture: request_schemas.WholeFixture):
 def update_fixture(
     db: Session,
     fixture_id: int,
-    fixture: broker_schema.FixtureUpdate,
+    fixture: request_schemas.FixtureUpdate,
 ):
     """Update a fixture."""
     db_fixture = (
@@ -243,7 +243,7 @@ def get_fixture_by_id(db: Session, fixture_id: int):
 
 def upsert_request(
     db: Session,
-    request: broker_schema.Request,
+    request: request_schemas.Request,
 ):
     """Create a new request."""
 
@@ -287,7 +287,7 @@ def upsert_request(
 
 
 def update_request(
-    db: Session, request_id: str, validation: broker_schema.RequestValidation
+    db: Session, request_id: str, validation: request_schemas.RequestValidation
 ):
     """Update a request."""
 
@@ -329,7 +329,7 @@ def update_request(
     return db_request
 
 
-async def link_request(db: Session, link: _schemas.Link):
+async def link_request(db: Session, link: request_schemas.Link):
     """Link a request to a user."""
     await asyncio.sleep(5)
     db_request = (
@@ -352,7 +352,7 @@ async def link_request(db: Session, link: _schemas.Link):
     return db_request
 
 
-def create_user(db: Session, user: _schemas.FrontendUser):
+def create_user(db: Session, user: request_schemas.User):
     """Create a new user."""
     # Check if user already exists
     db_user = db.query(models.UserModel).filter_by(id=user.uid).one_or_none()

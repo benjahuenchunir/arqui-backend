@@ -3,9 +3,10 @@
 # pylint: disable=missing-docstring
 
 from datetime import datetime as dt
-from typing import List, Optional
+from typing import List, Optional, Union
+from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class Status(BaseModel):
@@ -75,6 +76,69 @@ class WholeFixture(BaseModel):
 class FixtureUpdate(BaseModel):
     fixture: Fixture
     goals: Goals
+
+    class Config:
+        from_attributes = True
+
+
+class RequestShort(BaseModel):
+    fixture_id: int
+    result: str
+    quantity: int
+    uid: str
+
+    class Config:
+        from_attributes = True
+
+
+class Request(BaseModel):
+    request_id: UUID
+    group_id: Union[str, int]
+    fixture_id: int
+    league_name: str
+    round: str
+    date: dt
+    result: str
+    deposit_token: str = Field(default="")
+    datetime: str
+    quantity: int
+    seller: int = Field(default=0)
+    location: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+
+class RequestValidation(BaseModel):
+    request_id: Union[str, UUID]
+    group_id: Union[int, str]
+    seller: int
+    valid: bool
+
+    class Config:
+        from_attributes = True
+
+
+class User(BaseModel):
+    uid: str
+    email: str
+
+    class Config:
+        from_attributes = True
+
+
+class Wallet(BaseModel):
+    uid: str
+    amount: float
+
+    class Config:
+        from_attributes = True
+
+
+class Link(BaseModel):
+    uid: str
+    request_id: str
+    location: str
 
     class Config:
         from_attributes = True
