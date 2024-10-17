@@ -8,7 +8,7 @@ import requests
 from requests.exceptions import RequestException
 from sqlalchemy.orm import Session
 
-from . import _schemas, broker_schema, crud
+from . import crud
 from .schemas import request_schemas, response_schemas
 
 PUBLISHER_HOST = os.getenv("PUBLISHER_HOST")

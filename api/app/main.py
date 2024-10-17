@@ -12,7 +12,7 @@ from fastapi import Depends, FastAPI, HTTPException, Request, status
 from fastapi.responses import FileResponse, JSONResponse, RedirectResponse
 from sqlalchemy.orm import Session
 
-from . import _schemas, broker_schema, crud, models, publish
+from . import crud, models, publish
 from .database import engine, session_local
 from .schemas import request_schemas, response_schemas
 
@@ -99,7 +99,7 @@ def check_balance(request: request_schemas.RequestShort):
         crud.update_balance(
             db,
             request.uid,
-            request.quantity * BET_PRICE,
+            request.quantity * BET_PRICE,  # type: ignore
             add=False,
         )
 
@@ -132,7 +132,10 @@ def favicon():
 @app.get("/")
 def root():
     """Root path."""
-    return RedirectResponse(url=PATH_FIXTURES)
+    if PATH_FIXTURES:
+        return RedirectResponse(url=PATH_FIXTURES)
+
+    return {"error": "PATH_FIXTURES environment variable not set"}
 
 
 ################################################################
@@ -338,7 +341,6 @@ def update_request(
 # POST /signup
 @app.post(
     "/signup",
-    # TODO: response_model=response_schemas.FrontendUser,
     status_code=status.HTTP_201_CREATED,
 )
 def create_user(user: request_schemas.User, db: Session = Depends(get_db)):
