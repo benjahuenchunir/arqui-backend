@@ -29,6 +29,9 @@ PATH_REQUESTS = os.getenv("PATH_REQUESTS")
 PUBLISHER_HOST = os.getenv("PUBLISHER_HOST")
 PUBLISHER_PORT = os.getenv("PUBLISHER_PORT")
 
+JOBS_MASTER_HOST = os.getenv("JOBS_MASTER_HOST")
+JOBS_MASTER_PORT = os.getenv("JOBS_MASTER_PORT")
+
 GROUP_ID = os.getenv("GROUP_ID")
 
 BET_PRICE = os.getenv("BET_PRICE")
@@ -385,6 +388,17 @@ def get_publisher_status():
     """Get the status of the publisher. To test API-PUBLISHER connection."""
     try:
         response = requests.get(f"http://{PUBLISHER_HOST}:{PUBLISHER_PORT}", timeout=30)
+        response.raise_for_status()
+        return JSONResponse(status_code=response.status_code, content=response.json())
+    except requests.RequestException as e:
+        raise HTTPException(status_code=500, detail=str(e)) from e
+
+# GET /jobs_master
+@app.get("/jobs_master")
+def get_jobs_master_status():
+    """Get the status of the jobs_master."""
+    try:
+        response = requests.get(f"http://{JOBS_MASTER_HOST}:{JOBS_MASTER_PORT}/heartbeat", timeout=30)
         response.raise_for_status()
         return JSONResponse(status_code=response.status_code, content=response.json())
     except requests.RequestException as e:

@@ -28,6 +28,9 @@ services:
 
       PUBLISHER_HOST: arquisis-publisher
       PUBLISHER_PORT: 7999
+      
+      JOBS_MASTER_HOST: arquisis-jobs-master
+      JOBS_MASTER_PORT: 7998
 
       GROUP_ID: ${GROUP_ID}
 
@@ -74,6 +77,20 @@ services:
       MQTT_PASSWORD: ${MQTT_PASSWORD}
 
       POST_TOKEN: ${POST_TOKEN}
+    restart: on-failure
+  
+  arquisis-jobs-master:
+    image: jobs-master:latest
+    build:
+      context: ./jobs_master
+      dockerfile: Dockerfile
+    environment:
+      ENV: production
+
+      JOBS_HOST: ${JOBS_HOST}
+      JOBS_PORT: ${JOBS_PORT}
+      JOBS_USER: ${JOBS_USER}
+      JOBS_PASSWORD: ${JOBS_PASSWORD}
     restart: on-failure
 
 volumes:
