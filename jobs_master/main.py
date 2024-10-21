@@ -1,12 +1,14 @@
 """Subscribes to the MQTT broker and listens for messages."""
 
-# pylint: disable=W0613
+# pylint: disable=missing-docstring
 
 import logging
 import os
-import sys
+from contextlib import asynccontextmanager
 
-import paho.mqtt.publish as publish
+import pika
+import pika.adapters.blocking_connection
+import pika.exceptions
 from fastapi import FastAPI
 
 if os.getenv("ENV") != "production":
@@ -17,31 +19,45 @@ if os.getenv("ENV") != "production":
 logging.basicConfig(level=logging.INFO)
 
 # Credentials for Jobs Broker
-HOST = os.getenv("JOBS_HOST")
-PORT = os.getenv("JOBS_PORT")
 USER = os.getenv("JOBS_USER")
 PASS = os.getenv("JOBS_PASSWORD")
 
-if not HOST:
-    logging.error("HOST environment variable not set")
-    sys.exit(1)
+channels: list[pika.adapters.blocking_connection.BlockingChannel] = []
 
-if PORT and PORT.isdigit():
-    PORT = int(PORT)
-else:
-    logging.error("PORT environment variable not set or not an integer")
-    sys.exit(1)
 
-app = FastAPI()
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    if not USER or not PASS:
+        raise ValueError("JOBS_USER or JOBS_PASSWORD environment variables not set")
+
+    credentials = pika.PlainCredentials(USER, PASS)
+    params = pika.ConnectionParameters(host="rabbitmq", credentials=credentials)
+    connection = pika.BlockingConnection(params)
+    channel = connection.channel()
+    channel.queue_declare(queue="hello")
+    channels.append(channel)
+    logging.info("Connected to RabbitMQ!")
+
+    yield
+
+    connection.close()
+    logging.info("Connection to RabbitMQ closed")
+
+
+app = FastAPI(lifespan=lifespan)
+
 
 @app.get("/job/{id}")
-async def get_job(id: int):
-    return {"message": f"job id: {id}"}
+async def get_job(_id: int):
+    return {"message": f"job id: {_id}"}
+
 
 @app.post("/job")
 async def publish_message():
     return {"message": "job published"}
 
+
 @app.get("/heartbeat")
 async def heartbeat():
-    return True
+    channels[0].basic_publish(exchange="", routing_key="hello", body="Hello World!")
+    print(" [x] Sent 'Hello World!'")
