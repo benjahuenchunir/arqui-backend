@@ -12,8 +12,9 @@ from fastapi import Depends, FastAPI, HTTPException, Request, status
 from fastapi.responses import FileResponse, JSONResponse, RedirectResponse
 from sqlalchemy.orm import Session
 
-from . import broker_schema, crud, models, publish, schemas
+from . import crud, models, publish
 from .database import engine, session_local
+from .schemas import request_schemas, response_schemas
 
 if os.getenv("ENV") != "production":
     from dotenv import load_dotenv
@@ -30,7 +31,7 @@ PUBLISHER_PORT = os.getenv("PUBLISHER_PORT")
 
 GROUP_ID = os.getenv("GROUP_ID")
 
-BET_PRICE = int(os.getenv("BET_PRICE"))
+BET_PRICE = os.getenv("BET_PRICE")
 
 if not PATH_FIXTURES:
     print("PATH_FIXTURES environment variable not set")
@@ -38,6 +39,13 @@ if not PATH_FIXTURES:
 
 if not PATH_REQUESTS:
     print("PATH_FIXTURES environment variable not set")
+    sys.exit(1)
+
+
+if BET_PRICE and BET_PRICE.isdigit():
+    BET_PRICE = int(BET_PRICE)
+else:
+    print("BET_PRICE environment variable not set or not a number")
     sys.exit(1)
 
 app = FastAPI()
@@ -63,23 +71,24 @@ def verify_post_token(request: Request):
 
 def get_location(request: Request) -> str:
     """Get the location of the request."""
-    ip = request.client.host
-    url = f"http://ip-api.com/json/{ip}"
-    response = requests.get(url)
-    response.raise_for_status()
+    # ip = request.client.host  # type: ignore
+    # url = f"http://ip-api.com/json/{ip}"
+    # response = requests.get(url, timeout=30)
+    # response.raise_for_status()
 
-    location = "Unknown"
-    if response.status_code == 200:
-        json = response.json()
-        try:
-            if json["status"] == "success":
-                location = f"{json['city']}, {json['regionName']}, {json['country']}"
-        except KeyError:
-            pass
-    return location
+    # location = "Unknown"
+    # if response.status_code == 200:
+    #     json = response.json()
+    #     try:
+    #         if json["status"] == "success":
+    #             location = f"{json['city']}, {json['regionName']}, {json['country']}"
+    #     except KeyError:
+    #         pass
+    # return location
+    return "TODO"
 
 
-def check_balance(request: schemas.FrontendRequest):
+def check_balance(request: request_schemas.RequestShort):
     """Check the balance of the user."""
     db: Session = next(get_db())
     user = crud.get_user(db, request.uid)
@@ -90,12 +99,12 @@ def check_balance(request: schemas.FrontendRequest):
         crud.update_balance(
             db,
             request.uid,
-            request.quantity * BET_PRICE,
+            request.quantity * BET_PRICE,  # type: ignore
             add=False,
         )
 
 
-def check_bets(request: schemas.FrontendRequest):
+def check_bets(request: request_schemas.RequestShort):
     """Check the number of bets."""
     db: Session = next(get_db())
     fixture = crud.get_fixture_by_id(db, request.fixture_id)
@@ -104,7 +113,7 @@ def check_bets(request: schemas.FrontendRequest):
             raise HTTPException(status_code=403, detail="No more bets allowed")
 
 
-def check_backend_bets(request: broker_schema.Request):
+def check_backend_bets(request: request_schemas.Request):
     """Check the number of bets."""
     db: Session = next(get_db())
     fixture = crud.get_fixture_by_id(db, request.fixture_id)
@@ -123,7 +132,10 @@ def favicon():
 @app.get("/")
 def root():
     """Root path."""
-    return RedirectResponse(url=PATH_FIXTURES)
+    if PATH_FIXTURES:
+        return RedirectResponse(url=PATH_FIXTURES)
+
+    return {"error": "PATH_FIXTURES environment variable not set"}
 
 
 ################################################################
@@ -134,7 +146,7 @@ def root():
 # GET /fixtures
 @app.get(
     f"/{PATH_FIXTURES}",
-    response_model=List[schemas.Fixture],
+    response_model=List[response_schemas.Fixture],
     status_code=status.HTTP_200_OK,
 )
 def get_fixtures(
@@ -154,7 +166,7 @@ def get_fixtures(
 # GET /fixtures/available
 @app.get(
     f"/{PATH_FIXTURES}/available",
-    response_model=List[schemas.Fixture],
+    response_model=List[response_schemas.AvailableFixture],
     status_code=status.HTTP_200_OK,
 )
 def get_available_fixtures(
@@ -169,7 +181,7 @@ def get_available_fixtures(
 # GET /fixtures/{fixture_id}
 @app.get(
     f"/{PATH_FIXTURES}" + "/{fixture_id}",
-    response_model=schemas.Fixture,
+    response_model=response_schemas.Fixture,
     status_code=status.HTTP_200_OK,
 )
 def get_fixture(fixture_id: int, db: Session = Depends(get_db)):
@@ -188,11 +200,11 @@ def get_fixture(fixture_id: int, db: Session = Depends(get_db)):
 # POST /fixtures
 @app.post(
     f"/{PATH_FIXTURES}",
-    response_model=schemas.Fixture,
+    response_model=response_schemas.Fixture,
     status_code=status.HTTP_201_CREATED,
 )
 async def upsert_fixture(
-    fixture: broker_schema.WholeFixture,
+    fixture: request_schemas.WholeFixture,
     request: Request,
     db: Session = Depends(get_db),
     token: None = Depends(verify_post_token),
@@ -204,12 +216,12 @@ async def upsert_fixture(
 # PATCH /fixtures/{fixture_id}
 @app.patch(
     f"/{PATH_FIXTURES}" + "/{fixture_id}",
-    response_model=schemas.Fixture,
+    response_model=response_schemas.Fixture,
     status_code=status.HTTP_201_CREATED,
 )
 def update_fixture(
     fixture_id: int,
-    fixture: broker_schema.FixtureUpdate,
+    fixture: request_schemas.FixtureUpdate,
     db: Session = Depends(get_db),
     token: None = Depends(verify_post_token),
 ):
@@ -221,36 +233,6 @@ def update_fixture(
 
     crud.pay_bets(db, fixture_id)
 
-    # value = "Draw"
-    # fixture_result = "---"
-    # if db_fixture.home_team.goals == None or db_fixture.away_team.goals == None:
-    #     if db_fixture.home_team.goals != None and db_fixture.away_team.goals == None:
-    #         fixture_result = db_fixture.home_team.team.name
-    #         value = "Home"
-    #     elif db_fixture.home_team.goals == None and db_fixture.away_team.goals != None:
-    #         fixture_result = db_fixture.away_team.team.name
-    #         value = "Away"
-    # elif db_fixture.home_team.goals > db_fixture.away_team.goals:
-    #     fixture_result = db_fixture.home_team.team.name
-    #     value = "Home"
-    # elif db_fixture.home_team.goals < db_fixture.away_team.goals:
-    #     fixture_result = db_fixture.away_team.team.name
-    #     value = "Away"
-
-    # for odd in db_fixture.odds:
-    #     if odd.name == "Match Winner":
-    #         for v in odd.values:
-    #             if v.bet == value:
-    #                 odds = v.value
-
-    # for bet in db_fixture.requests:
-    #     if (
-    #         bet.status == models.RequestStatusEnum.APPROVED
-    #         and bet.result == fixture_result
-    #     ):
-    #         crud.update_balance(
-    #             db, bet.user_id, bet.quantity * odds * BET_PRICE, add=True
-    #         )
     return db_fixture
 
 
@@ -262,10 +244,13 @@ def update_fixture(
 # GET /requests/{user_id}
 @app.get(
     f"/{PATH_REQUESTS}" + "/{user_id}",
-    response_model=List[schemas.FrontendRequestResponse],
+    response_model=List[response_schemas.RequestShort],
     status_code=status.HTTP_200_OK,
 )
-def get_requests(user_id: str, db: Session = Depends(get_db)):
+def get_requests(
+    user_id: str,
+    db: Session = Depends(get_db),
+):
     """Get requests."""
     return crud.get_requests(db, user_id)
 
@@ -273,10 +258,11 @@ def get_requests(user_id: str, db: Session = Depends(get_db)):
 # POST /requests/frontend
 @app.post(
     f"/{PATH_REQUESTS}/frontend",
+    response_model=response_schemas.RequestShort,
     status_code=status.HTTP_200_OK,
 )
 async def post_publisher_request(
-    request: schemas.FrontendRequest,
+    request: request_schemas.RequestShort,
     db: Session = Depends(get_db),
     location: str = Depends(get_location),
     bets: None = Depends(check_bets),
@@ -291,7 +277,7 @@ async def post_publisher_request(
     asyncio.create_task(
         crud.link_request(
             db,
-            schemas.Link(
+            request_schemas.Link(
                 uid=uid,
                 request_id=str(req.request_id),
                 location=location,
@@ -310,10 +296,11 @@ async def post_publisher_request(
 # POST /requests
 @app.post(
     f"/{PATH_REQUESTS}",
+    response_model=response_schemas.Request,
     status_code=status.HTTP_201_CREATED,
 )
 def upsert_request(
-    request: broker_schema.Request,
+    request: request_schemas.Request,
     db: Session = Depends(get_db),
     token: None = Depends(verify_post_token),
     bets: None = Depends(check_backend_bets),
@@ -330,11 +317,12 @@ def upsert_request(
 # PATCH /requests/{request_id}
 @app.patch(
     f"/{PATH_REQUESTS}" + "/{request_id}",
+    response_model=response_schemas.Request,
     status_code=status.HTTP_200_OK,
 )
 def update_request(
     request_id: str,
-    request: broker_schema.RequestValidation,
+    request: request_schemas.RequestValidation,
     db: Session = Depends(get_db),
     token: None = Depends(verify_post_token),
 ):
@@ -355,7 +343,7 @@ def update_request(
     "/signup",
     status_code=status.HTTP_201_CREATED,
 )
-def create_user(user: schemas.FrontendUser, db: Session = Depends(get_db)):
+def create_user(user: request_schemas.User, db: Session = Depends(get_db)):
     """Create a new user."""
     return crud.create_user(db, user)
 
@@ -379,7 +367,7 @@ def get_wallet(uid: str, db: Session = Depends(get_db)):
     status_code=status.HTTP_200_OK,
 )
 def update_balance(
-    wallet: schemas.FrontendWallet,
+    wallet: request_schemas.Wallet,
     db: Session = Depends(get_db),
 ):
     """Update the balance of the user."""

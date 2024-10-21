@@ -1,9 +1,12 @@
+"""Contains the request schemas for the API endpoints."""
+
+# pylint: disable=missing-docstring
+
 from datetime import datetime as dt
-from datetime import timezone
 from typing import List, Optional, Union
 from uuid import UUID
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field
 
 
 class Status(BaseModel):
@@ -78,9 +81,17 @@ class FixtureUpdate(BaseModel):
         from_attributes = True
 
 
-class Request(BaseModel):
-    """Request model for the broker."""
+class RequestShort(BaseModel):
+    fixture_id: int
+    result: str
+    quantity: int
+    uid: str
 
+    class Config:
+        from_attributes = True
+
+
+class Request(BaseModel):
     request_id: UUID
     group_id: Union[str, int]
     fixture_id: int
@@ -92,46 +103,7 @@ class Request(BaseModel):
     datetime: str
     quantity: int
     seller: int = Field(default=0)
-
-    # @field_validator("result")
-    # def result_validator(cls, value):
-    #     if type(value) != str:
-    #         return ""
-    #     return value
-
-    # @field_validator("date")
-    # def date_validator(cls, value):
-    #     if isinstance(value, str):
-    #         try:
-    #             value = dt.strptime(value, "%Y-%m-%d")
-    #         except ValueError:
-    #             value=""
-    #     elif isinstance(value, dt):
-    #         return value
-    #     return ""
-
-    # @field_validator("datetime")
-    # def datetime_validator(cls, value):
-    #     try:
-    #         if isinstance(value, dt):
-    #             return value.strftime("%Y-%m-%dT%H:%M:%S UTC")
-    #         elif isinstance(value, str):
-    #             return value
-    #     except ValueError:
-    #         return dt.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S UTC")
-
-    # @field_validator("deposit_token")
-    # def deposit_token_validator(cls, value):
-    #     if type(value) != str:
-    #         return ""
-    #     return value
-
-    # @field_validator("group_id")
-    # def group_id_validator(cls, value):
-    #     try:
-    #         return str(value)
-    #     except ValueError:
-    #         return "0"
+    location: Optional[str] = None
 
     class Config:
         from_attributes = True
@@ -142,6 +114,31 @@ class RequestValidation(BaseModel):
     group_id: Union[int, str]
     seller: int
     valid: bool
+
+    class Config:
+        from_attributes = True
+
+
+class User(BaseModel):
+    uid: str
+    email: str
+
+    class Config:
+        from_attributes = True
+
+
+class Wallet(BaseModel):
+    uid: str
+    amount: float
+
+    class Config:
+        from_attributes = True
+
+
+class Link(BaseModel):
+    uid: str
+    request_id: str
+    location: str
 
     class Config:
         from_attributes = True
