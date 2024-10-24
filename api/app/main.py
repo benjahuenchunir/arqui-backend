@@ -123,6 +123,13 @@ def check_backend_bets(request: request_schemas.Request):
     if fixture:
         if fixture.remaining_bets < request.quantity:  # type: ignore
             raise HTTPException(status_code=403, detail="No more bets allowed")
+        
+def get_deposit_token(request: Request) -> str:
+    """Get the deposit token."""
+    token = request.headers.get("Deposit-Token")
+    if not token:
+        token = ""
+    return token
 
 
 @app.get("/favicon.ico", include_in_schema=False)
@@ -270,9 +277,14 @@ async def post_publisher_request(
     location: str = Depends(get_location),
     bets: None = Depends(check_bets),
     balance: None = Depends(check_balance),
+    deposit_token: str = Depends(get_deposit_token)
 ):
     """Post a request to the publisher."""
-    response = publish.create_request(db, request, location)
+
+    if (deposit_token == "") and (balance < BET_PRICE * request.quantity):
+        raise HTTPException(status_code=403, detail="Insufficient funds")
+
+    response = publish.create_request(db, request, deposit_token)
     if response is None:
         raise HTTPException(status_code=404, detail="Fixture not found")
 
@@ -282,14 +294,30 @@ async def post_publisher_request(
             db,
             request_schemas.Link(
                 uid=uid,
-                request_id=str(req.request_id),
-                location=location,
+                request_id=str(req.request_id)
             ),
         )
     )
 
     return req
 
+# POST /requests/validate
+@app.post(
+    f"/{PATH_REQUESTS}/validate",
+    response_model=response_schemas.RequestValidation,
+    status_code=status.HTTP_200_OK,
+)
+async def post_publisher_validation(
+    request: request_schemas.RequestValidation,
+    db: Session = Depends(get_db),
+    token: None = Depends(verify_post_token),
+):
+    """Post a validation to the publisher."""
+    response = publish.create_validation(db, request)
+    if response is None:
+        raise HTTPException(status_code=404, detail="Request not found")
+
+    return response
 
 ################################################################
 #                   REQUESTS - BACKEND                         #
