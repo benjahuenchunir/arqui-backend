@@ -169,6 +169,7 @@ class RequestModel(Base):
     deposit_token = Column(String(255), nullable=True)
     datetime = Column(String(255))
     quantity = Column(Integer)
+    wallet = Column(Boolean, nullable=False)
     seller = Column(Integer, nullable=True)
 
     status = Column(SqlEnum(RequestStatusEnum), default=RequestStatusEnum.PENDING)
