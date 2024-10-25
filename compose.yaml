@@ -19,6 +19,7 @@ services:
     depends_on:
       - arquisis-database
       - arquisis-publisher
+      - arquisis-jobs-master
     environment:
       ENV: production
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@arquisis-database:5432/${POSTGRES_DB_NAME}
@@ -81,37 +82,43 @@ services:
 
   arquisis-jobs-master:
     image: jobs-master:latest
-    ports:
-      - "7998:7998"
     build:
       context: ./jobs_master
       dockerfile: Dockerfile
+    command: uvicorn producer:app --reload --host 0.0.0.0 --port 7998
+    volumes:
+      - ./jobs_master:/opt/
+    expose:
+      - 7998
+    ports:
+      - '7998:7998'
     environment:
       ENV: production
-      JOBS_USER: ${JOBS_BROKER_USER}
-      JOBS_PASSWORD: ${JOBS_BROKER_PASSWORD}
+      CELERY_BROKER_URL: redis://redis-broker:6379/0
+      CELERY_RESULT_BACKEND: redis://redis-broker:6379/0
     restart: on-failure
     depends_on:
-      rabbitmq:
-        condition: service_healthy
-
-  rabbitmq:
-    image: rabbitmq:3-management
-    ports:
-      - "15672:15672"
-      - "5672:5672"
-    environment:
-      RABBITMQ_DEFAULT_USER: ${JOBS_BROKER_USER}
-      RABBITMQ_DEFAULT_PASS: ${JOBS_BROKER_PASSWORD}
-    restart: on-failure
+      - redis-broker
+  
+  redis-broker:
+    image: redis:7
     volumes:
-      - rabbitmq_data:/var/lib/rabbitmq
-    healthcheck:
-      test: [ "CMD", "rabbitmqctl", "status" ]
-      interval: 10s
-      timeout: 10s
-      retries: 5
+      - ./redis/redis.conf:/usr/local/etc/redis/redis.conf
+
+  consumer:
+    build:
+      context: ./jobs_master
+      dockerfile: Dockerfile
+    deploy:
+      replicas: 2
+    command: celery -A consumer.celery_app worker --loglevel=INFO --purge --concurrency=1
+    volumes:
+      - ./jobs_master:/opt/
+    depends_on:
+      - arquisis-jobs-master
+    environment:
+      CELERY_BROKER_URL: ${CELERY_BROKER_URL}
+      CELERY_RESULT_BACKEND: ${CELERY_RESULT_BACKEND}
 
 volumes:
   db_data:
-  rabbitmq_data:

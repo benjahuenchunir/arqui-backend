@@ -383,7 +383,7 @@ def update_balance(
 
 
 # GET /publisher
-@app.get("/publisher")
+@app.get("/publisher/heartbeat")
 def get_publisher_status():
     """Get the status of the publisher. To test API-PUBLISHER connection."""
     try:
@@ -394,11 +394,28 @@ def get_publisher_status():
         raise HTTPException(status_code=500, detail=str(e)) from e
 
 # GET /jobs_master
-@app.get("/jobs_master")
+@app.get("/jobs_master/heartbeat")
 def get_jobs_master_status():
     """Get the status of the jobs_master."""
     try:
         response = requests.get(f"http://{JOBS_MASTER_HOST}:{JOBS_MASTER_PORT}/heartbeat", timeout=30)
+        response.raise_for_status()
+        return JSONResponse(status_code=response.status_code, content=response.json())
+    except requests.RequestException as e:
+        raise HTTPException(status_code=500, detail=str(e)) from e
+
+# GET /jobs_master/create_job - TODO delete this endpoint
+@app.get("/jobs_master/create_job")
+def create_sample_job():
+    try:
+        sample_user_id = "sample_user_id"
+        deposit_token = "sample_deposit_token"
+
+        payload = {
+            "user_id": sample_user_id,
+            "deposit_token": deposit_token
+        }
+        response = requests.post(f"http://{JOBS_MASTER_HOST}:{JOBS_MASTER_PORT}/job", json=payload, timeout=30)
         response.raise_for_status()
         return JSONResponse(status_code=response.status_code, content=response.json())
     except requests.RequestException as e:

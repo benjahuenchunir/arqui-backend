@@ -1,24 +1,17 @@
-# For more information, please refer to https://aka.ms/vscode-docker-python
-FROM python:3-slim
+# ./django-docker/app/Dockerfile
+FROM python:3.11
 
-# Keeps Python from generating .pyc files in the container
-ENV PYTHONDONTWRITEBYTECODE=1
+# set work directory
+WORKDIR /opt/
 
-# Turns off buffering for easier container logging
-ENV PYTHONUNBUFFERED=1
+# set environment variables
+ENV PYTHONDONTWRITEBYTECODE 1
+ENV PYTHONUNBUFFERED 1
 
-# Install pip requirements
-COPY requirements/common.txt .
-COPY requirements/production.txt .
-RUN pip install --upgrade --no-cache-dir -r production.txt
+# install dependencies
+COPY ./requirements/common.txt /opt/common.txt
+COPY ./requirements/production.txt /opt/production.txt
+RUN pip install --upgrade --no-cache-dir -r /opt/production.txt
 
-WORKDIR /app
-COPY . /app
-
-# Creates a non-root user with an explicit UID and adds permission to access the /app folder
-# For more info, please refer to https://aka.ms/vscode-docker-python-configure-containers
-RUN adduser -u 5678 --disabled-password --gecos "" appuser && chown -R appuser /app
-USER appuser
-
-# During debugging, this entry point will be overridden. For more information, please refer to https://aka.ms/vscode-docker-python-debug
-CMD ["fastapi", "run", "main.py", "--port", "7998"]
+# copy project
+COPY . /opt/
