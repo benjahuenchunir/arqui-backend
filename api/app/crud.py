@@ -12,7 +12,7 @@ from sqlalchemy.exc import SAWarning
 from sqlalchemy.orm import Session, aliased
 from sqlalchemy.sql import func
 
-from . import models
+from db import models
 from .schemas import request_schemas
 
 warnings.filterwarnings("ignore", category=SAWarning)

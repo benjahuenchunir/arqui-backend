@@ -6,7 +6,9 @@ from celery import shared_task
 # need the instance of the Celery app.
 # @celery_app.task()
 
-# TODO: replace with actual tasks
+# TODO: replace with actual tasks and ideally use models
+
+
 
 @shared_task
 def get_user_purchases(user_id):

@@ -8,12 +8,13 @@ ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
 # Install pip requirements
-COPY requirements/common.txt .
-COPY requirements/production.txt .
+COPY api/requirements/common.txt .
+COPY api/requirements/production.txt .
 RUN pip install --upgrade --no-cache-dir -r production.txt
 
 WORKDIR /api
-COPY /app /api/app
+COPY api/app /api/app
+COPY db /api/db
 
 # Creates a non-root user with an explicit UID and adds permission to access the /app folder
 # For more info, please refer to https://aka.ms/vscode-docker-python-configure-containers

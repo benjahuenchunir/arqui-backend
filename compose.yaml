@@ -12,8 +12,8 @@ services:
   arquisis-api:
     image: api:latest
     build:
-      context: ./api
-      dockerfile: Dockerfile
+      context: ./
+      dockerfile: ./api/Dockerfile
     ports:
       - "8001-8003:8000"
     depends_on:
@@ -83,17 +83,19 @@ services:
   arquisis-jobs-master:
     image: jobs-master:latest
     build:
-      context: ./jobs_master
-      dockerfile: Dockerfile
+      context: ./
+      dockerfile: ./jobs_master/Dockerfile
     command: uvicorn producer:app --reload --host 0.0.0.0 --port 7998
     volumes:
       - ./jobs_master:/opt/
+      - ./db:/opt/db
     expose:
       - 7998
     ports:
       - '7998:7998'
     environment:
       ENV: production
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@arquisis-database:5432/${POSTGRES_DB_NAME}
       CELERY_BROKER_URL: redis://redis-broker:6379/0
       CELERY_RESULT_BACKEND: redis://redis-broker:6379/0
     restart: on-failure
@@ -107,16 +109,19 @@ services:
 
   consumer:
     build:
-      context: ./jobs_master
-      dockerfile: Dockerfile
+      context: ./
+      dockerfile: ./jobs_master/Dockerfile
     deploy:
       replicas: 2
     command: celery -A consumer.celery_app worker --loglevel=INFO --purge --concurrency=1
     volumes:
       - ./jobs_master:/opt/
+      - ./db:/opt/db
     depends_on:
       - arquisis-jobs-master
     environment:
+      ENV: production
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@arquisis-database:5432/${POSTGRES_DB_NAME}
       CELERY_BROKER_URL: ${CELERY_BROKER_URL}
       CELERY_RESULT_BACKEND: ${CELERY_RESULT_BACKEND}
 

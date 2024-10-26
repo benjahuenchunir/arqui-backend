@@ -8,9 +8,17 @@ from fastapi import FastAPI
 from celery.result import AsyncResult
 from celery_config.tasks import get_user_purchases, get_future_matches, calculate_historical_accuracies, calculate_league_benefits, get_top_matches, process_webpay_payment, send_validation_result
 from fastapi.exceptions import HTTPException
-from models import UserInfo
+from job_models import UserInfo
+
+from db.database import engine, get_db
+from db import models
 
 logging.basicConfig(level=logging.INFO)
+
+models.Base.metadata.create_all(bind=engine)
+
+def db():
+    return next(get_db())
 
 app = FastAPI()
 
@@ -30,6 +38,9 @@ async def get_job(_id: str):
 async def publish_message(user_info: UserInfo):
     user_id = user_info.user_id
     deposit_token = user_info.deposit_token
+    fixtures = db().query(models.FixtureModel).all()
+    for fixture in fixtures:
+        print(fixture)
     try:
         purchases_result = get_user_purchases.delay(user_id)
         purchases = purchases_result.get(timeout=10)

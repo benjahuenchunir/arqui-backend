@@ -12,8 +12,9 @@ from fastapi import Depends, FastAPI, HTTPException, Request, status
 from fastapi.responses import FileResponse, JSONResponse, RedirectResponse
 from sqlalchemy.orm import Session
 
-from . import crud, models, publish
-from .database import engine, session_local
+from . import crud, publish
+from db import models
+from db.database import engine, get_db
 from .schemas import request_schemas, response_schemas
 
 if os.getenv("ENV") != "production":
@@ -54,16 +55,6 @@ else:
 app = FastAPI()
 
 models.Base.metadata.create_all(bind=engine)
-
-
-def get_db():
-    """Get a database session."""
-    db = session_local()
-    try:
-        yield db
-    finally:
-        db.close()
-
 
 def verify_post_token(request: Request):
     """Verify the POST token."""

@@ -10,6 +10,12 @@ from sqlalchemy.orm import relationship
 
 from .database import Base
 
+import sys
+current_path = os.path.dirname(__file__)
+parent_path = os.path.dirname(current_path)
+parent2_path = os.path.dirname(parent_path)
+sys.path.append(parent2_path)
+
 BET_LIMMIT = os.getenv("BET_LIMMIT")
 try:
     BET_LIMMIT = int(BET_LIMMIT)
