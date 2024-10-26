@@ -1,4 +1,7 @@
+alembic==1.11.1
+celery[redis]==5.2.7
 fastapi[standard]
-psycopg2-binary
+flower==1.2.0
 uvicorn
-paho-mqtt
+sqlalchemy
+psycopg2-binary

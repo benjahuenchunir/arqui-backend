@@ -12,8 +12,9 @@ from fastapi import Depends, FastAPI, HTTPException, Request, status
 from fastapi.responses import FileResponse, JSONResponse, RedirectResponse
 from sqlalchemy.orm import Session
 
-from . import crud, models, publish
-from .database import engine, session_local
+from . import crud, publish
+from db import models
+from db.database import engine, get_db
 from .schemas import request_schemas, response_schemas
 
 if os.getenv("ENV") != "production":
@@ -54,16 +55,6 @@ else:
 app = FastAPI()
 
 models.Base.metadata.create_all(bind=engine)
-
-
-def get_db():
-    """Get a database session."""
-    db = session_local()
-    try:
-        yield db
-    finally:
-        db.close()
-
 
 def verify_post_token(request: Request):
     """Verify the POST token."""
@@ -383,7 +374,7 @@ def update_balance(
 
 
 # GET /publisher
-@app.get("/publisher")
+@app.get("/publisher/heartbeat")
 def get_publisher_status():
     """Get the status of the publisher. To test API-PUBLISHER connection."""
     try:
@@ -394,11 +385,24 @@ def get_publisher_status():
         raise HTTPException(status_code=500, detail=str(e)) from e
 
 # GET /jobs_master
-@app.get("/jobs_master")
+@app.get("/jobs_master/heartbeat")
 def get_jobs_master_status():
     """Get the status of the jobs_master."""
     try:
         response = requests.get(f"http://{JOBS_MASTER_HOST}:{JOBS_MASTER_PORT}/heartbeat", timeout=30)
+        response.raise_for_status()
+        return JSONResponse(status_code=response.status_code, content=response.json())
+    except requests.RequestException as e:
+        raise HTTPException(status_code=500, detail=str(e)) from e
+
+# GET /jobs_master/create_job - TODO delete this endpoint
+@app.get("/jobs_master/create_job/{user_id}")
+def create_sample_job(user_id: str):
+    try:
+        payload = {
+            "user_id": user_id
+        }
+        response = requests.post(f"http://{JOBS_MASTER_HOST}:{JOBS_MASTER_PORT}/job", json=payload, timeout=30)
         response.raise_for_status()
         return JSONResponse(status_code=response.status_code, content=response.json())
     except requests.RequestException as e:
