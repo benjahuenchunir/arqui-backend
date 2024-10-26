@@ -98,6 +98,7 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@arquisis-database:5432/${POSTGRES_DB_NAME}
       CELERY_BROKER_URL: redis://redis-broker:6379/0
       CELERY_RESULT_BACKEND: redis://redis-broker:6379/0
+      GROUP_ID: ${GROUP_ID}
     restart: on-failure
     depends_on:
       - redis-broker
@@ -124,6 +125,7 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@arquisis-database:5432/${POSTGRES_DB_NAME}
       CELERY_BROKER_URL: ${CELERY_BROKER_URL}
       CELERY_RESULT_BACKEND: ${CELERY_RESULT_BACKEND}
+      GROUP_ID: ${GROUP_ID}
 
 volumes:
   db_data:

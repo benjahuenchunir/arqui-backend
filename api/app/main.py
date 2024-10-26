@@ -396,15 +396,11 @@ def get_jobs_master_status():
         raise HTTPException(status_code=500, detail=str(e)) from e
 
 # GET /jobs_master/create_job - TODO delete this endpoint
-@app.get("/jobs_master/create_job")
-def create_sample_job():
+@app.get("/jobs_master/create_job/{user_id}")
+def create_sample_job(user_id: str):
     try:
-        sample_user_id = "sample_user_id"
-        deposit_token = "sample_deposit_token"
-
         payload = {
-            "user_id": sample_user_id,
-            "deposit_token": deposit_token
+            "user_id": user_id
         }
         response = requests.post(f"http://{JOBS_MASTER_HOST}:{JOBS_MASTER_PORT}/job", json=payload, timeout=30)
         response.raise_for_status()
