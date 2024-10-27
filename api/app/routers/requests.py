@@ -8,6 +8,7 @@ from ..schemas import response_schemas, request_schemas
 from .. import crud, publish
 import asyncio
 import sys
+from ..transbank_transaction import webpay_plus_transaction
 
 PATH_REQUESTS = os.getenv("PATH_REQUESTS")
 if not PATH_REQUESTS:
@@ -19,6 +20,17 @@ if BET_PRICE and BET_PRICE.isdigit():
     BET_PRICE = int(BET_PRICE)
 else:
     print("BET_PRICE environment variable not set or not a number")
+    sys.exit(1)
+
+SESSION_ID = os.getenv("SESSION_ID")
+TRANSBANK_REDIRECT_URL = os.getenv("TRANSBANK_REDIRECT_URL")
+
+if not SESSION_ID:
+    print("SESSION_ID environment variable not set")
+    sys.exit(1)
+
+if not TRANSBANK_REDIRECT_URL:
+    print("TRANSBANK_REDIRECT_URL environment variable not set")
     sys.exit(1)
 
 router = APIRouter(
@@ -62,7 +74,16 @@ async def post_publisher_request(
     deposit_token: str = Depends(get_deposit_token)
 ):
     """Post a request to the publisher."""
+    
+    
+    amount: int = request.quantity * BET_PRICE # type: ignore
 
+    try:
+        transaction_response = webpay_plus_transaction.create("Order", SESSION_ID, amount, TRANSBANK_REDIRECT_URL)
+        return transaction_response
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    
     if (deposit_token == "") and (balance < BET_PRICE * request.quantity):
         raise HTTPException(status_code=403, detail="Insufficient funds")
 
@@ -119,12 +140,13 @@ def upsert_request(
     bets: None = Depends(check_backend_bets),
 ):
     """Upsert a new request."""
-    response = crud.upsert_request(db, request)
+    
+    db_request = crud.upsert_request(db, request)
 
-    if response is None:
+    if db_request is None:
         raise HTTPException(status_code=404, detail="Fixture not found")
 
-    return response
+    return db_request
 
 
 # PATCH /requests/{request_id}

@@ -3,9 +3,9 @@
 import os
 from enum import Enum as PyEnum
 
-from sqlalchemy import Boolean, Column, Date, DateTime
+from sqlalchemy import Boolean, Column, DateTime
 from sqlalchemy import Enum as SqlEnum
-from sqlalchemy import Float, ForeignKey, Integer, String, Uuid
+from sqlalchemy import Float, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship
 
 from .database import Base
