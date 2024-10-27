@@ -18,7 +18,7 @@ from .schemas import request_schemas
 warnings.filterwarnings("ignore", category=SAWarning)
 
 BET_PRICE = os.getenv("BET_PRICE")
-
+GROUP_ID = os.getenv("GROUP_ID")
 
 def upsert_fixture(db: Session, fixture: request_schemas.WholeFixture):
     """Upsert a fixture."""
@@ -406,7 +406,7 @@ def pay_bets(db: Session, fixture_id: int):
         db.query(models.RequestModel)
         .filter(models.RequestModel.fixture_id == fixture_id)
         .filter(models.RequestModel.status == models.RequestStatusEnum.APPROVED)
-        .filter(models.RequestModel.group_id == 2)
+        .filter(models.RequestModel.group_id == GROUP_ID)
         .all()
     )
 
