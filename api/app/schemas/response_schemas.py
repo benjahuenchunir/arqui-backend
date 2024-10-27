@@ -110,6 +110,7 @@ class Request(BaseModel):
     class Config:
         from_attributes = True
 
+
 class RequestValidation(BaseModel):
     request_id: UUID
     group_id: Union[str, int]
@@ -118,3 +119,7 @@ class RequestValidation(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class TransactionResult(BaseModel):
+    approved: bool

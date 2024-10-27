@@ -37,8 +37,8 @@ def create_request(db: Session, req: request_schemas.RequestShort, deposit_token
         deposit_token=deposit_token,
         datetime=datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S UTC"),
         quantity=req.quantity,
-        wallet = True if (deposit_token == "") else False,
-        seller = 0
+        wallet=bool(deposit_token),
+        seller=0,
     )
     publish_request(request)
 
@@ -63,7 +63,7 @@ def publish_request(request: response_schemas.Request):
         raise RequestException(response.text)
 
 
-def create_validation (db: Session, req: request_schemas.RequestValidation):
+def create_validation(db: Session, req: request_schemas.RequestValidation):
     """Create a request validation."""
     db_request = crud.get_request_by_id(db, req.request_id)
 
@@ -74,12 +74,13 @@ def create_validation (db: Session, req: request_schemas.RequestValidation):
         request_id=uuid.uuid4(),
         group_id=str(GROUP_ID),
         seller=req.seller,
-        valid=req.valid
+        valid=req.valid,
     )
 
     publish_validation(request)
 
-    return (request)
+    return request
+
 
 def publish_validation(request: response_schemas.RequestValidation):
     """Publish a request validation."""

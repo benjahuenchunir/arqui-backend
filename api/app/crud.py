@@ -13,12 +13,14 @@ from sqlalchemy.orm import Session, aliased
 from sqlalchemy.sql import func
 
 from db import models
+
 from .schemas import request_schemas
 
 warnings.filterwarnings("ignore", category=SAWarning)
 
 BET_PRICE = os.getenv("BET_PRICE")
 GROUP_ID = os.getenv("GROUP_ID")
+
 
 def upsert_fixture(db: Session, fixture: request_schemas.WholeFixture):
     """Upsert a fixture."""
@@ -441,3 +443,22 @@ def pay_bets(db: Session, fixture_id: int):
 
     db.commit()
     return db_requests
+
+
+def create_transaction(db: Session, transaction: request_schemas.RequestShort):
+    """Create a new transaction."""
+    db_transaction = models.TransactionModel(
+        fixture_id=transaction.fixture_id,
+        user_id=transaction.uid,
+        quantity=transaction.quantity,
+        result=transaction.result,
+    )
+    db.add(db_transaction)
+    db.commit()
+    db.refresh(db_transaction)
+    return db_transaction
+
+
+def get_transaction(db: Session, token: str):
+    """Get transactions by user ID."""
+    return db.query(models.TransactionModel).filter_by(token=token).one_or_none()

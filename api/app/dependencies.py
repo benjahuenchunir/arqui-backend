@@ -1,17 +1,22 @@
-from fastapi import Request, HTTPException
 import os
+
+from fastapi import HTTPException, Request
 from sqlalchemy.orm import Session
+
 from db.database import get_db
+
 from . import crud
 from .schemas import request_schemas
 
 POST_TOKEN = os.getenv("POST_TOKEN")
+
 
 def verify_post_token(request: Request):
     """Verify the POST token."""
     token = request.headers.get("Authorization")
     if token != f"Bearer {POST_TOKEN}":
         raise HTTPException(status_code=403, detail="Invalid token")
+
 
 def get_location(request: Request) -> str:
     """Get the location of the request."""
@@ -64,7 +69,8 @@ def check_backend_bets(request: request_schemas.Request):
     if fixture:
         if fixture.remaining_bets < request.quantity:  # type: ignore
             raise HTTPException(status_code=403, detail="No more bets allowed")
-        
+
+
 def get_deposit_token(request: Request) -> str:
     """Get the deposit token."""
     token = request.headers.get("Deposit-Token")

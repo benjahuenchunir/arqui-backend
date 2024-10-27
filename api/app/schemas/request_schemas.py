@@ -142,3 +142,10 @@ class Link(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class CommitTransaction(BaseModel):
+    token: str
+
+    class Config:
+        from_attributes = True

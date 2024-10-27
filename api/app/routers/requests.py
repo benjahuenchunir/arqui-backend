@@ -1,13 +1,24 @@
+import asyncio
+import os
+import sys
 from typing import List
+
+import transbank.error.transbank_error as transbank_error
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
+
 from db.database import get_db
-from ..dependencies import verify_post_token, get_location, check_bets, check_balance, get_deposit_token, check_backend_bets
-import os
-from ..schemas import response_schemas, request_schemas
+
 from .. import crud, publish
-import asyncio
-import sys
+from ..dependencies import (
+    check_backend_bets,
+    check_balance,
+    check_bets,
+    get_deposit_token,
+    get_location,
+    verify_post_token,
+)
+from ..schemas import request_schemas, response_schemas
 from ..transbank_transaction import webpay_plus_transaction
 
 PATH_REQUESTS = os.getenv("PATH_REQUESTS")
@@ -62,47 +73,93 @@ def get_requests(
 # POST /requests/frontend
 @router.post(
     "/frontend",
-    response_model=response_schemas.RequestShort,
+    # response_model=response_schemas.RequestShort,
     status_code=status.HTTP_200_OK,
 )
-async def post_publisher_request(
+async def start_webpay_flow(
     request: request_schemas.RequestShort,
     db: Session = Depends(get_db),
     location: str = Depends(get_location),
     bets: None = Depends(check_bets),
-    balance: None = Depends(check_balance),
-    deposit_token: str = Depends(get_deposit_token)
 ):
-    """Post a request to the publisher."""
-    
-    
-    amount: int = request.quantity * BET_PRICE # type: ignore
+    """Start the Webpay flow."""
+
+    amount: int = request.quantity * BET_PRICE  # type: ignore
+    transaction = crud.create_transaction(db, request)
 
     try:
-        transaction_response = webpay_plus_transaction.create("Order", SESSION_ID, amount, TRANSBANK_REDIRECT_URL)
-        return transaction_response
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-    
-    if (deposit_token == "") and (balance < BET_PRICE * request.quantity):
-        raise HTTPException(status_code=403, detail="Insufficient funds")
-
-    response = publish.create_request(db, request, deposit_token)
-    if response is None:
-        raise HTTPException(status_code=404, detail="Fixture not found")
-
-    uid, req = response
-    asyncio.create_task(
-        crud.link_request(
-            db,
-            request_schemas.Link(
-                uid=uid,
-                request_id=str(req.request_id)
-            ),
+        transaction_response = webpay_plus_transaction.create(
+            str(transaction.id), SESSION_ID, amount, TRANSBANK_REDIRECT_URL
         )
-    )
+        transaction.token = transaction_response["token"]
+        db.commit()
 
-    return req
+    except transbank_error.TransbankError as e:
+        transaction.status = "aborted"  # type: ignore
+        db.commit()
+        raise HTTPException(status_code=500, detail=str(e)) from e
+
+    publish.create_request(db, request, transaction_response["token"])
+
+    return {
+        "url": transaction_response["url"],
+        "token": transaction_response["token"],
+        "amount": request.quantity,
+        "price": amount,
+    }
+
+    # if (deposit_token == "") and (balance < BET_PRICE * request.quantity):
+    #     raise HTTPException(status_code=403, detail="Insufficient funds")
+
+    # response = publish.create_request(db, request, deposit_token)
+    # if response is None:
+    #     raise HTTPException(status_code=404, detail="Fixture not found")
+
+    # uid, req = response
+    # asyncio.create_task(
+    #     crud.link_request(
+    #         db,
+    #         request_schemas.Link(uid=uid, request_id=str(req.request_id)),
+    #     )
+    # )
+
+    # return req
+
+
+# POST /requests/commit-transaction
+@router.post(
+    "/commit-transaction",
+    # response_model=response_schemas.TransactionResult,
+    status_code=status.HTTP_200_OK,
+)
+async def commit_transaction(
+    request: request_schemas.CommitTransaction,
+    db: Session = Depends(get_db),
+):
+    """Commit a transaction."""
+    transaction = crud.get_transaction(db, request.token)
+
+    if transaction is None:
+        raise HTTPException(status_code=404, detail="Transaction not found")
+
+    try:
+        confirmed_transaction = webpay_plus_transaction.commit(request.token)
+    except transbank_error.TransbankError:
+        transaction.status = "aborted"  # type: ignore
+        db.commit()
+        return {"status": "ABORTED"}
+
+    if (
+        confirmed_transaction["response_code"] != 0
+        or confirmed_transaction["status"] != "AUTHORIZED"
+    ):
+        transaction.status = "rejected"  # type: ignore
+    else:
+        transaction.status = "approved"  # type: ignore
+
+    db.commit()
+    return confirmed_transaction
+
 
 # POST /requests/validate
 @router.post(
@@ -122,6 +179,7 @@ async def post_publisher_validation(
 
     return response
 
+
 ################################################################
 #                   REQUESTS - BACKEND                         #
 ################################################################
@@ -140,7 +198,7 @@ def upsert_request(
     bets: None = Depends(check_backend_bets),
 ):
     """Upsert a new request."""
-    
+
     db_request = crud.upsert_request(db, request)
 
     if db_request is None:
@@ -166,4 +224,3 @@ def update_request(
     if response is None:
         raise HTTPException(status_code=404, detail="Request not found")
     return response
-

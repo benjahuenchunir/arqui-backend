@@ -1,6 +1,7 @@
 """SQLAlchemy models for the database."""
 
 import os
+import sys
 from enum import Enum as PyEnum
 
 from sqlalchemy import Boolean, Column, DateTime
@@ -10,7 +11,6 @@ from sqlalchemy.orm import relationship
 
 from .database import Base
 
-import sys
 current_path = os.path.dirname(__file__)
 parent_path = os.path.dirname(current_path)
 parent2_path = os.path.dirname(parent_path)
@@ -181,3 +181,18 @@ class RequestModel(Base):
 
     fixture = relationship("FixtureModel", back_populates="requests")
     user = relationship("UserModel", back_populates="requests")
+
+
+class TransactionModel(Base):
+    """Base class for transactions"""
+
+    __tablename__ = "transactions"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    token = Column(String(255), nullable=True)
+    fixture_id = Column(Integer, ForeignKey("fixtures.id"))
+    user_id = Column(String, ForeignKey("users.id"))
+    result = Column(String(255))
+    quantity = Column(Integer)
+    status = Column(String(255), default="pending")
+    wallet = Column(Boolean, default=False)
