@@ -10,16 +10,10 @@ services:
     restart: on-failure
 
   arquisis-api:
-    image: api:latest
-    build:
-      context: ./
-      dockerfile: ./api/Dockerfile
-    volumes:
-      - ./api/app:/api/app
-      - ./db:/api/db
-    command: uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+    image: public.ecr.aws/v0y9v2i3/api
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000
     ports:
-      - "8001-8003:8000"
+      - "8001:8000"
     depends_on:
       - arquisis-database
       - arquisis-publisher
@@ -44,16 +38,10 @@ services:
 
       SESSION_ID: ${SESSION_ID}
       TRANSBANK_REDIRECT_URL: ${TRANSBANK_REDIRECT_URL}
-    deploy:
-      replicas: 3
-      restart_policy:
-        condition: on-failure
+    restart: on-failure
 
   arquisis-listener:
-    image: listener:latest
-    build:
-      context: ./listener
-      dockerfile: Dockerfile
+    image: public.ecr.aws/v0y9v2i3/listener
     depends_on:
       - arquisis-api
     environment:
@@ -72,10 +60,7 @@ services:
     restart: on-failure
 
   arquisis-publisher:
-    image: publisher:latest
-    build:
-      context: ./publisher
-      dockerfile: Dockerfile
+    image: public.ecr.aws/v0y9v2i3/publisher
     environment:
       ENV: ${ENV}
 
@@ -88,18 +73,8 @@ services:
     restart: on-failure
 
   arquisis-jobs-master:
-    image: jobs-master:latest
-    build:
-      context: ./
-      dockerfile: ./jobs_master/Dockerfile
-    command: uvicorn producer:app --reload --host 0.0.0.0 --port 7998
-    volumes:
-      - ./jobs_master:/opt/
-      - ./db:/opt/db
-    expose:
-      - 7998
-    ports:
-      - '7998:7998'
+    image: public.ecr.aws/v0y9v2i3/jobs-master
+    command: uvicorn producer:app --host 0.0.0.0 --port 7998
     environment:
       ENV: ${ENV}
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@arquisis-database:5432/${POSTGRES_DB_NAME}
@@ -116,11 +91,7 @@ services:
       - ./redis/redis.conf:/usr/local/etc/redis/redis.conf
 
   consumer:
-    build:
-      context: ./
-      dockerfile: ./jobs_master/Dockerfile
-    deploy:
-      replicas: 2
+    image: public.ecr.aws/v0y9v2i3/jobs-master
     command: celery -A consumer.celery_app worker --loglevel=INFO --purge --concurrency=1
     volumes:
       - ./jobs_master:/opt/
