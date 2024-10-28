@@ -3,6 +3,7 @@
 # pylint: disable=W0613
 
 import os
+
 if os.getenv("ENV") != "production":
     from dotenv import load_dotenv
 
@@ -10,17 +11,22 @@ if os.getenv("ENV") != "production":
 
 from fastapi import FastAPI
 from fastapi.responses import FileResponse, RedirectResponse
+
 from db import models
 from db.database import engine
-from .routers import fixtures, requests as requestRouter, users, tests
+
+from .routers import fixtures
+from .routers import requests as requestRouter
+from .routers import tests, users
 
 PATH_FIXTURES = os.getenv("PATH_FIXTURES")
 
 
-app = FastAPI()
+app = FastAPI(root_path="/v2")
 
 if os.getenv("ENV") != "production":
     from starlette.middleware.cors import CORSMiddleware
+
     app.add_middleware(
         CORSMiddleware,
         allow_origins=["*"],
@@ -36,12 +42,14 @@ app.include_router(requestRouter.router)
 app.include_router(fixtures.router)
 app.include_router(tests.router)
 
+
 @app.get("/favicon.ico", include_in_schema=False)
 def favicon():
     """Favicon."""
     return FileResponse("app/favicon.ico")
 
-## /
+
+# /
 @app.get("/")
 def root():
     """Root path."""
