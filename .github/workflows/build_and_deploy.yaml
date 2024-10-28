@@ -4,12 +4,20 @@ on:
   pull_request:
     branches:
       - main
+    paths-ignore:
+      - 'docs/**'
   push:
     branches:
       - main
+    paths-ignore:
+      - 'docs/**'
+
+permissions:
+  id-token: write
+  contents: read
 
 jobs:
-  build:
+  build-and-test:
     runs-on: ubuntu-latest
     environment: build_test_env
 
@@ -67,25 +75,109 @@ jobs:
 
     - name: Stop containers
       run: docker-compose down
-
-  deploy:
-    needs: build
+  
+  build-and-push:
+    needs: build-and-test
     if: github.ref == 'refs/heads/main' && success()
     runs-on: ubuntu-latest
-
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: us-east-1
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
-    - name: Deploy to EC2
-      uses: appleboy/ssh-action@master
-      with:
-        host: ${{ secrets.EC2_HOST }}
-        username: ${{ secrets.EC2_USER }}
-        key: ${{ secrets.EC2_PRIVATE_KEY }}
-        port: 22
-        script: |
-          cd ./arqui-backend
-          git pull origin main
-          docker-compose down
-          docker-compose up --build -d
+      - name: Login to Amazon ECR Public
+        id: login-ecr-public
+        uses: aws-actions/amazon-ecr-login@v2
+        with:
+          registry-type: public
+
+      - name: Build, tag, and push api
+        env:
+          REGISTRY: ${{ steps.login-ecr-public.outputs.registry }}
+          REGISTRY_ALIAS: v0y9v2i3
+          REPOSITORY: arquisis-api
+          IMAGE_TAG: latest
+        run: |
+          docker build -t $REGISTRY/$REGISTRY_ALIAS/$REPOSITORY:$IMAGE_TAG -f ./api/Dockerfile .
+          docker push $REGISTRY/$REGISTRY_ALIAS/$REPOSITORY:$IMAGE_TAG
+
+      - name: Build, tag, and push jobs-master
+        env:
+          REGISTRY: ${{ steps.login-ecr-public.outputs.registry }}
+          REGISTRY_ALIAS: v0y9v2i3
+          REPOSITORY: jobs-master
+          IMAGE_TAG: latest
+        run: |
+          docker build -t $REGISTRY/$REGISTRY_ALIAS/$REPOSITORY:$IMAGE_TAG -f ./jobs_master/Dockerfile .
+          docker push $REGISTRY/$REGISTRY_ALIAS/$REPOSITORY:$IMAGE_TAG
+      
+      - name: Build, tag, and push listener
+        env:
+          REGISTRY: ${{ steps.login-ecr-public.outputs.registry }}
+          REGISTRY_ALIAS: v0y9v2i3
+          REPOSITORY: listener
+          IMAGE_TAG: latest
+        run: |
+          cd listener
+          docker build -t $REGISTRY/$REGISTRY_ALIAS/$REPOSITORY:$IMAGE_TAG .
+          docker push $REGISTRY/$REGISTRY_ALIAS/$REPOSITORY:$IMAGE_TAG
+      
+      - name: Build, tag, and push publisher
+        env:
+          REGISTRY: ${{ steps.login-ecr-public.outputs.registry }}
+          REGISTRY_ALIAS: v0y9v2i3
+          REPOSITORY: publisher
+          IMAGE_TAG: latest
+        run: |
+          cd publisher
+          docker build -t $REGISTRY/$REGISTRY_ALIAS/$REPOSITORY:$IMAGE_TAG .
+          docker push $REGISTRY/$REGISTRY_ALIAS/$REPOSITORY:$IMAGE_TAG
+      
+  
+  deploy-to-ec2:
+    runs-on: ubuntu-latest
+    if: ${{always()}}
+    needs: [build-and-push]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{secrets.AWS_ACCESS_KEY_ID0}}
+          aws-secret-access-key: ${{secrets.AWS_SECRET_ACCESS_KEY0}}
+          aws-region: us-east-1
+
+      - name: Login to Amazon ECR
+        id: login-ecr-public
+        uses: aws-actions/amazon-ecr-login@v2
+        with:
+          registry-type: public
+          mask-password: "true"
+
+      - name: Zip artifact to deploy
+        run: |
+          zip -r deploy.zip scripts/ appspec.yml docker-compose.production.yml
+      - name: Copy Zip to S3
+        run: |
+          aws s3 cp deploy.zip s3://iic2173-back/deploy.zip
+      
+      - name: Create CodeDeploy Deployment
+        id: create-deployment-trigger
+        run: |
+          deploymentId=$(aws deploy create-deployment --application-name \
+          iic2173-app --deployment-group-name group-iic2173 --region us-east-1 \
+          --s3-location bucket=iic2173-back,key=deploy.zip,bundleType=zip \
+          --description --file-exists-behavior OVERWRITE "Automatic deployment from githubactions commit ${{github.sha}}" | jq -r '.deploymentId')
+          echo "DeploymentId=$deploymentId" >> $GITHUB_OUTPUT
+    
+      - name: Wait for deployment to finish
+        run: |
+          aws deploy wait deployment-successful --deployment-id ${{ steps.create-deployment-trigger.outputs.deploymentId }} --region us-east-1
