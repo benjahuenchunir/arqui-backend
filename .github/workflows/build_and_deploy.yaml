@@ -35,10 +35,10 @@ jobs:
         docker-compose --version
 
     - name: Build Docker images
-      run: docker-compose build
-
+      run: docker-compose -f compose.dev.yaml build
+    
     - name: Run Docker containers
-      run: docker-compose up -d
+      run: docker-compose -f compose.dev.yaml up -d
       env:
         POSTGRES_USER: ${{ vars.POSTGRES_USER }}
         POSTGRES_PASSWORD: ${{ vars.POSTGRES_PASSWORD }}
