@@ -19,7 +19,7 @@ from .schemas import request_schemas
 
 warnings.filterwarnings("ignore", category=SAWarning)
 
-BET_PRICE = os.getenv("BET_PRICE")
+BET_PRICE = int(os.getenv("BET_PRICE"))
 GROUP_ID = os.getenv("GROUP_ID")
 
 
@@ -315,20 +315,22 @@ def update_request(
         return None
 
     if validation.valid:
-        db_request.status = models.RequestStatusEnum.APPROVED
+        db_request.status = models.RequestStatusEnum.APPROVED  # type: ignore
+
+        if db_request.wallet and db_request.user_id:  # type: ignore
+            update_balance(
+                db,
+                db_request.user_id,  # type: ignore
+                db_request.quantity * int(BET_PRICE),  # type: ignore
+                add=False,
+            )
 
     else:
-        db_request.status = models.RequestStatusEnum.REJECTED
+        db_request.status = models.RequestStatusEnum.REJECTED  # type: ignore
         db_fixture = (
             db.query(models.FixtureModel).filter_by(id=db_request.fixture_id).one()
         )
-        db_fixture.remaining_bets += db_request.quantity
-
-        # db_request.fixture.remaining_bets += db_request.quantity
-        # if db_request.user != None:
-        #     update_balance(
-        #         db, db_request.user.id, db_request.quantity * BET_PRICE, add=True
-        #     )
+        db_fixture.remaining_bets += db_request.quantity  # type: ignore
 
     db.commit()
     db.refresh(db_request)

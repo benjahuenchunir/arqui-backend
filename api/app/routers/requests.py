@@ -181,8 +181,8 @@ async def commit_transaction(
 async def start_wallet_flow(
     request: request_schemas.RequestShort,
     db: Session = Depends(get_db),
-    balance: None = Depends(check_balance),
     bets: None = Depends(check_bets),
+    balance: None = Depends(check_balance),
     location: str = Depends(get_location),
 ):
     """Start the wallet payment method flow."""
@@ -193,11 +193,13 @@ async def start_wallet_flow(
             db,
             request_schemas.Link(
                 uid=request.uid,
-                request_id=published_request.request_id,  # type: ignore
+                request_id=str(published_request.request_id),  # type: ignore
                 location=location,
             ),
         )
     )
+
+    return published_request
 
 
 ################################################################

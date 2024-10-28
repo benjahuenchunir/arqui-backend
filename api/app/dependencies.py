@@ -43,15 +43,8 @@ def check_balance(request: request_schemas.RequestShort):
     db: Session = next(get_db())
     user = crud.get_user(db, request.uid)
     if user:
-        if user.wallet < request.quantity * BET_PRICE:  # type: ignore
+        if user.wallet < request.quantity * int(BET_PRICE):  # type: ignore
             raise HTTPException(status_code=403, detail="Insufficient funds")
-
-        crud.update_balance(
-            db,
-            request.uid,
-            request.quantity * BET_PRICE,  # type: ignore
-            add=False,
-        )
 
 
 def check_bets(request: request_schemas.RequestShort):
