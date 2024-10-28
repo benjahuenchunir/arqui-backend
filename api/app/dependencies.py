@@ -9,6 +9,7 @@ from . import crud
 from .schemas import request_schemas
 
 POST_TOKEN = os.getenv("POST_TOKEN")
+BET_PRICE = os.getenv("BET_PRICE")
 
 
 def verify_post_token(request: Request):

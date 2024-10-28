@@ -4,6 +4,7 @@
 
 import asyncio
 import os
+import uuid
 import warnings
 from datetime import datetime
 from typing import Optional
@@ -246,6 +247,7 @@ def get_fixture_by_id(db: Session, fixture_id: int):
 def upsert_request(
     db: Session,
     request: request_schemas.Request,
+    wallet: bool = False,
 ):
     """Create a new request."""
 
@@ -265,6 +267,7 @@ def upsert_request(
         deposit_token=request.deposit_token,
         datetime=request.datetime,
         quantity=request.quantity,
+        wallet=wallet,
         seller=request.seller,
         status=models.RequestStatusEnum.PENDING,
     )
@@ -284,6 +287,7 @@ def upsert_request(
     # db_fixture.remaining_bets -= request.quantity
 
     db.commit()
+    db.refresh(db_fixture)
     db.refresh(db_request)
     return db_request
 
@@ -396,6 +400,15 @@ def update_balance(db: Session, user_id: str, amount: float, add: bool = True):
     return db_user
 
 
+def get_request_by_id(db: Session, request_id: str):
+    """Get request details by request ID."""
+    return (
+        db.query(models.RequestModel)
+        .filter(models.RequestModel.request_id == request_id)
+        .one_or_none()
+    )
+
+
 def pay_bets(db: Session, fixture_id: int):
     """Pay bets for a finished fixture."""
 
@@ -448,6 +461,7 @@ def pay_bets(db: Session, fixture_id: int):
 def create_transaction(db: Session, transaction: request_schemas.RequestShort):
     """Create a new transaction."""
     db_transaction = models.TransactionModel(
+        request_id=uuid.uuid4(),
         fixture_id=transaction.fixture_id,
         user_id=transaction.uid,
         quantity=transaction.quantity,

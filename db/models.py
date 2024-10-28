@@ -190,8 +190,9 @@ class TransactionModel(Base):
 
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     token = Column(String(255), nullable=True)
-    fixture_id = Column(Integer, ForeignKey("fixtures.id"))
-    user_id = Column(String, ForeignKey("users.id"))
+    request_id = Column(String(255))
+    fixture_id = Column(Integer)
+    user_id = Column(String)
     result = Column(String(255))
     quantity = Column(Integer)
     status = Column(String(255), default="pending")

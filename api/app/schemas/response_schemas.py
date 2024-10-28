@@ -119,7 +119,3 @@ class RequestValidation(BaseModel):
 
     class Config:
         from_attributes = True
-
-
-class TransactionResult(BaseModel):
-    approved: bool

@@ -81,6 +81,7 @@ async def publish_message(
             status_code=500, content={"message": "Failed to publish message"}
         )
 
+
 @app.post("/validate")
 async def publish_validation(
     request: Msg,

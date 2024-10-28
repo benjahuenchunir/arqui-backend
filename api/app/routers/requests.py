@@ -1,3 +1,7 @@
+"""Requests router."""
+
+# pylint: disable=E0402, W0613
+
 import asyncio
 import os
 import sys
@@ -10,14 +14,8 @@ from sqlalchemy.orm import Session
 from db.database import get_db
 
 from .. import crud, publish
-from ..dependencies import (
-    check_backend_bets,
-    check_balance,
-    check_bets,
-    get_deposit_token,
-    get_location,
-    verify_post_token,
-)
+from ..dependencies import check_backend_bets  # ? But why tho?
+from ..dependencies import check_balance, check_bets, get_location, verify_post_token
 from ..schemas import request_schemas, response_schemas
 from ..transbank_transaction import webpay_plus_transaction
 
@@ -70,9 +68,9 @@ def get_requests(
     return crud.get_requests(db, user_id)
 
 
-# POST /requests/frontend
+# POST /requests/webpay
 @router.post(
-    "/frontend",
+    "/webpay",
     # response_model=response_schemas.RequestShort,
     status_code=status.HTTP_200_OK,
 )
@@ -89,7 +87,7 @@ async def start_webpay_flow(
 
     try:
         transaction_response = webpay_plus_transaction.create(
-            str(transaction.id), SESSION_ID, amount, TRANSBANK_REDIRECT_URL
+            str(transaction.id), SESSION_ID, amount, TRANSBANK_REDIRECT_URL  # type: ignore
         )
         transaction.token = transaction_response["token"]
         db.commit()
@@ -99,7 +97,23 @@ async def start_webpay_flow(
         db.commit()
         raise HTTPException(status_code=500, detail=str(e)) from e
 
-    publish.create_request(db, request, transaction_response["token"])
+    publish.create_request(
+        db=db,
+        req=request,
+        deposit_token=transaction.token,
+        request_id=transaction.request_id,  # type: ignore
+    )
+
+    asyncio.create_task(
+        crud.link_request(
+            db,
+            request_schemas.Link(
+                uid=transaction.user_id,  # type: ignore
+                request_id=transaction.request_id,  # type: ignore
+                location=location,
+            ),
+        )
+    )
 
     return {
         "url": transaction_response["url"],
@@ -107,23 +121,6 @@ async def start_webpay_flow(
         "amount": request.quantity,
         "price": amount,
     }
-
-    # if (deposit_token == "") and (balance < BET_PRICE * request.quantity):
-    #     raise HTTPException(status_code=403, detail="Insufficient funds")
-
-    # response = publish.create_request(db, request, deposit_token)
-    # if response is None:
-    #     raise HTTPException(status_code=404, detail="Fixture not found")
-
-    # uid, req = response
-    # asyncio.create_task(
-    #     crud.link_request(
-    #         db,
-    #         request_schemas.Link(uid=uid, request_id=str(req.request_id)),
-    #     )
-    # )
-
-    # return req
 
 
 # POST /requests/commit-transaction
@@ -137,6 +134,7 @@ async def commit_transaction(
     db: Session = Depends(get_db),
 ):
     """Commit a transaction."""
+
     transaction = crud.get_transaction(db, request.token)
 
     if transaction is None:
@@ -144,40 +142,62 @@ async def commit_transaction(
 
     try:
         confirmed_transaction = webpay_plus_transaction.commit(request.token)
+        aborted = False
     except transbank_error.TransbankError:
         transaction.status = "aborted"  # type: ignore
         db.commit()
-        return {"status": "ABORTED"}
+        valid = False
+        aborted = True
 
     if (
         confirmed_transaction["response_code"] != 0
         or confirmed_transaction["status"] != "AUTHORIZED"
     ):
         transaction.status = "rejected"  # type: ignore
+        valid = False
     else:
         transaction.status = "approved"  # type: ignore
+        valid = True
+
+    publish.create_validation(
+        db,
+        request_schemas.RequestValidation(
+            request_id=transaction.request_id,  # type: ignore
+            group_id=2,
+            seller=0,
+            valid=valid,
+        ),
+    )
 
     db.commit()
-    return confirmed_transaction
+    return {"status": "ABORTED"} if aborted else confirmed_transaction
 
 
-# POST /requests/validate
+# POST /requests/wallet
 @router.post(
-    "/validate",
-    response_model=response_schemas.RequestValidation,
+    "/wallet",
     status_code=status.HTTP_200_OK,
 )
-async def post_publisher_validation(
-    request: request_schemas.RequestValidation,
+async def start_wallet_flow(
+    request: request_schemas.RequestShort,
     db: Session = Depends(get_db),
-    token: None = Depends(verify_post_token),
+    balance: None = Depends(check_balance),
+    bets: None = Depends(check_bets),
+    location: str = Depends(get_location),
 ):
-    """Post a validation to the publisher."""
-    response = publish.create_validation(db, request)
-    if response is None:
-        raise HTTPException(status_code=404, detail="Request not found")
+    """Start the wallet payment method flow."""
+    published_request = publish.create_request(db, request)
 
-    return response
+    asyncio.create_task(
+        crud.link_request(
+            db,
+            request_schemas.Link(
+                uid=request.uid,
+                request_id=published_request.request_id,  # type: ignore
+                location=location,
+            ),
+        )
+    )
 
 
 ################################################################
@@ -199,7 +219,7 @@ def upsert_request(
 ):
     """Upsert a new request."""
 
-    db_request = crud.upsert_request(db, request)
+    db_request = crud.upsert_request(db, request, wallet=False)
 
     if db_request is None:
         raise HTTPException(status_code=404, detail="Fixture not found")

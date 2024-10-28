@@ -3,6 +3,7 @@
 import os
 import uuid
 from datetime import datetime, timezone
+from typing import Optional
 
 import requests
 from requests.exceptions import RequestException
@@ -19,7 +20,12 @@ GROUP_ID = os.getenv("GROUP_ID")
 POST_TOKEN = os.getenv("POST_TOKEN")
 
 
-def create_request(db: Session, req: request_schemas.RequestShort, deposit_token: str):
+def create_request(
+    db: Session,
+    req: request_schemas.RequestShort,
+    deposit_token: str = "",
+    request_id: Optional[str] = None,
+):
     """Create a request."""
     db_fixture = crud.get_fixture_by_id(db, req.fixture_id)
 
@@ -27,7 +33,7 @@ def create_request(db: Session, req: request_schemas.RequestShort, deposit_token
         return None
 
     request = response_schemas.Request(
-        request_id=uuid.uuid4(),
+        request_id=request_id or uuid.uuid4(),  # type: ignore
         group_id=str(GROUP_ID),
         fixture_id=req.fixture_id,
         league_name=db_fixture.league.name,
@@ -37,12 +43,12 @@ def create_request(db: Session, req: request_schemas.RequestShort, deposit_token
         deposit_token=deposit_token,
         datetime=datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S UTC"),
         quantity=req.quantity,
-        wallet=bool(deposit_token),
+        wallet=not bool(deposit_token),
         seller=0,
     )
     publish_request(request)
 
-    return (req.uid, request)
+    return request
 
 
 def publish_request(request: response_schemas.Request):
@@ -65,13 +71,13 @@ def publish_request(request: response_schemas.Request):
 
 def create_validation(db: Session, req: request_schemas.RequestValidation):
     """Create a request validation."""
-    db_request = crud.get_request_by_id(db, req.request_id)
+    db_request = crud.get_request_by_id(db, req.request_id)  # type: ignore
 
     if db_request is None:
         return None
 
     request = response_schemas.RequestValidation(
-        request_id=uuid.uuid4(),
+        request_id=req.request_id,  # type: ignore
         group_id=str(GROUP_ID),
         seller=req.seller,
         valid=req.valid,
