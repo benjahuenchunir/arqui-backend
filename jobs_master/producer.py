@@ -5,6 +5,7 @@
 import logging
 from typing import Dict, List
 
+from celery import chain, chord, group
 from celery.result import AsyncResult
 from celery_config.tasks import (
     calculate_historical_accuracies,
@@ -17,14 +18,12 @@ from fastapi import FastAPI
 from fastapi.exceptions import HTTPException
 from job_models import UserInfo
 
-from db import models
-
 logging.basicConfig(level=logging.INFO)
 
 app = FastAPI()
 
 
-@app.get("/job/{id}")
+@app.get("/job/{_id}")
 async def get_job(_id: str):
     result = AsyncResult(_id)
     if result.state == "PENDING":
@@ -41,30 +40,19 @@ async def get_job(_id: str):
 async def publish_message(user_info: UserInfo):
     user_id = user_info.user_id
     try:
-        purchases_result = get_user_purchases.delay(user_id)
-        purchases: Dict[str, Dict[str, int]] = purchases_result.get(timeout=10)
-        print("User purchases: ", purchases)
-
-        future_matches_result = get_future_matches.delay(purchases)
-        future_matches: List[models.FixtureModel] = future_matches_result.get(
-            timeout=10
+        result_chain = chain(
+            get_user_purchases.s(user_id),
+            chord(
+                group(get_future_matches.s(), calculate_historical_accuracies.s()),
+                calculate_league_benefits.s(),
+            ),
+            get_top_matches.s(),
         )
-        print("Future matche ids: ", future_matches)
 
-        accuracies_result = calculate_historical_accuracies.delay(
-            future_matches, purchases
-        )
-        accuracies: Dict[int, int] = accuracies_result.get(timeout=10)
+        # Execute the chain and wait for the final result
+        league_benefits = result_chain.apply_async(task_id=user_id).get(timeout=10)  # type: ignore
 
-        league_benefits_result = calculate_league_benefits.delay(
-            accuracies, future_matches
-        )
-        league_benefits = league_benefits_result.get(timeout=10)
-
-        top_matches_result = get_top_matches.delay(league_benefits)
-        top_matches = top_matches_result.get(timeout=10)
-
-        return {"message": "Job published successfully", "top_matches": top_matches}
+        return league_benefits
 
     except Exception as e:
         logging.error(f"Error processing job: {str(e)}")
