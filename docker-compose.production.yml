@@ -38,6 +38,9 @@ services:
 
       SESSION_ID: ${SESSION_ID}
       TRANSBANK_REDIRECT_URL: ${TRANSBANK_REDIRECT_URL}
+
+      EMAIL: ${EMAIL}
+      EMAIL_PASSWORD: ${EMAIL_PASSWORD}
     restart: on-failure
 
   arquisis-listener:
