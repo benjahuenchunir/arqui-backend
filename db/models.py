@@ -177,6 +177,8 @@ class RequestModel(Base):
 
     paid = Column(Boolean, default=False)
 
+    correct = Column(Boolean, default=False)
+
     location = Column(String(255), nullable=True)
 
     fixture = relationship("FixtureModel", back_populates="requests")
