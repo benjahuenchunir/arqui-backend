@@ -54,7 +54,7 @@ def assert_redirection(url, expected_endpoint):
 
 if __name__ == "__main__":
     time.sleep(3)
-    if not check_service("API-PUBLISHER", "http://localhost:8001/publisher"):
+    if not check_service("API-PUBLISHER", "http://localhost:8001/publisher/heartbeat"):
         sys.exit(1)
     
     assert_redirection("http://localhost:8001/", PATH_FIXTURES)
