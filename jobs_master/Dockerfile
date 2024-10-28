@@ -10,9 +10,8 @@ ENV PYTHONUNBUFFERED=1
 ENV PYTHONPATH=/opt:/opt/db2
 
 # install dependencies
-COPY jobs_master/requirements/common.txt . 
-COPY jobs_master/requirements/production.txt . 
-RUN pip install --upgrade --no-cache-dir -r production.txt
+COPY jobs_master/requirements.txt . 
+RUN pip install --upgrade --no-cache-dir -r requirements.txt
 
 # copy project
 WORKDIR /opt

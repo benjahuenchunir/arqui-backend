@@ -5,3 +5,4 @@ uvicorn
 requests
 uuid6
 transbank-sdk
+python-dotenv
