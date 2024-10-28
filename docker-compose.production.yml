@@ -96,6 +96,8 @@ services:
   consumer:
     image: public.ecr.aws/v0y9v2i3/jobs-master
     command: celery -A consumer.celery_app worker --loglevel=INFO --purge --concurrency=1
+    deploy:
+      replicas: 2
     volumes:
       - ./jobs_master:/opt/
       - ./db:/opt/db
