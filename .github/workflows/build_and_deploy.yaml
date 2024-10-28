@@ -103,15 +103,15 @@ jobs:
         run: |
           aws s3 cp deploy.zip s3://iic2173-back/deploy.zip
       
-          - name: Create CodeDeploy Deployment
-          id: create-deployment-trigger
-          run: |
-            deploymentId=$(aws deploy create-deployment --application-name iic2173-app \
-            --deployment-group-name group-iic2173 --region us-east-1 \
-            --s3-location bucket=iic2173-back,key=deploy.zip,bundleType=zip \
-            --description "Automatic deployment from githubactions commit ${{ github.sha }}" \
-            --file-exists-behavior OVERWRITE | jq -r '.deploymentId')
-            echo "deploymentId=$deploymentId" >> $GITHUB_OUTPUT
+      - name: Create CodeDeploy Deployment
+        id: create-deployment-trigger
+        run: |
+          deploymentId=$(aws deploy create-deployment --application-name iic2173-app \
+          --deployment-group-name group-iic2173 --region us-east-1 \
+          --s3-location bucket=iic2173-back,key=deploy.zip,bundleType=zip \
+          --description "Automatic deployment from githubactions commit ${{ github.sha }}" \
+          --file-exists-behavior OVERWRITE | jq -r '.deploymentId')
+          echo "deploymentId=$deploymentId" >> $GITHUB_OUTPUT
         
       - name: Debug Deployment ID
         run: |
