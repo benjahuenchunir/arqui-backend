@@ -45,6 +45,7 @@ def get_user_purchases(user_id: str):
             "home_team": request.fixture.id_home_team,
             "away_team": request.fixture.id_away_team,
             "correct": request.correct,
+            "multiplier": request.quantity,
         }
         for request in db_requests
     }
@@ -96,8 +97,8 @@ def calculate_historical_accuracies(
 
     for request in purchases.values():
         if request["correct"]:
-            accuracies[request["home_team"]] += 1
-            accuracies[request["away_team"]] += 1
+            accuracies[request["home_team"]] += request["multiplier"]
+            accuracies[request["away_team"]] += request["multiplier"]
 
     return {"accuracies": accuracies}
 
