@@ -4,3 +4,4 @@ sqlalchemy
 uvicorn
 requests
 uuid6
+transbank-sdk

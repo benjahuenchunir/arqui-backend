@@ -14,6 +14,10 @@ services:
     build:
       context: ./
       dockerfile: ./api/Dockerfile
+    volumes:
+      - ./api/app:/api/app
+      - ./db:/api/db
+    command: uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
     ports:
       - "8001-8003:8000"
     depends_on:
@@ -21,7 +25,7 @@ services:
       - arquisis-publisher
       - arquisis-jobs-master
     environment:
-      ENV: production
+      ENV: ${ENV}
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@arquisis-database:5432/${POSTGRES_DB_NAME}
       POST_TOKEN: ${POST_TOKEN}
       PATH_FIXTURES: ${PATH_FIXTURES}
@@ -37,6 +41,9 @@ services:
 
       BET_PRICE: 1000
       BET_LIMIT: 40
+
+      SESSION_ID: ${SESSION_ID}
+      TRANSBANK_REDIRECT_URL: ${TRANSBANK_REDIRECT_URL}
     deploy:
       replicas: 3
       restart_policy:
@@ -50,7 +57,7 @@ services:
     depends_on:
       - arquisis-api
     environment:
-      ENV: production
+      ENV: ${ENV}
 
       MQTT_HOST: ${MQTT_HOST}
       MQTT_PORT: ${MQTT_PORT}
@@ -70,7 +77,7 @@ services:
       context: ./publisher
       dockerfile: Dockerfile
     environment:
-      ENV: production
+      ENV: ${ENV}
 
       MQTT_HOST: ${MQTT_HOST}
       MQTT_PORT: ${MQTT_PORT}
@@ -94,7 +101,7 @@ services:
     ports:
       - '7998:7998'
     environment:
-      ENV: production
+      ENV: ${ENV}
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@arquisis-database:5432/${POSTGRES_DB_NAME}
       CELERY_BROKER_URL: redis://redis-broker:6379/0
       CELERY_RESULT_BACKEND: redis://redis-broker:6379/0
@@ -121,7 +128,7 @@ services:
     depends_on:
       - arquisis-jobs-master
     environment:
-      ENV: production
+      ENV: ${ENV}
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@arquisis-database:5432/${POSTGRES_DB_NAME}
       CELERY_BROKER_URL: ${CELERY_BROKER_URL}
       CELERY_RESULT_BACKEND: ${CELERY_RESULT_BACKEND}

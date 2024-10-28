@@ -103,8 +103,18 @@ class Request(BaseModel):
     deposit_token: str = Field(default="")
     datetime: str
     quantity: int
+    wallet: bool
     seller: int = Field(default=0)
-    location: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+
+class RequestValidation(BaseModel):
+    request_id: UUID
+    group_id: Union[str, int]
+    seller: int = Field(default=0)
+    valid: bool
 
     class Config:
         from_attributes = True
