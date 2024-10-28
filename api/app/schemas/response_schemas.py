@@ -105,7 +105,6 @@ class Request(BaseModel):
     quantity: int
     wallet: bool
     seller: int = Field(default=0)
-    location: Optional[str] = None
 
     class Config:
         from_attributes = True
