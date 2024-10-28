@@ -102,15 +102,21 @@ jobs:
         run: |
           aws s3 cp deploy.zip s3://iic2173-back/deploy.zip
       
-      - name: Create CodeDeploy Deployment
-        id: create-deployment-trigger
+          - name: Create CodeDeploy Deployment
+          id: create-deployment-trigger
+          run: |
+            deploymentId=$(aws deploy create-deployment --application-name iic2173-app \
+            --deployment-group-name group-iic2173 --region us-east-1 \
+            --s3-location bucket=iic2173-back,key=deploy.zip,bundleType=zip \
+            --description "Automatic deployment from githubactions commit ${{ github.sha }}" \
+            --file-exists-behavior OVERWRITE | jq -r '.deploymentId')
+            echo "deploymentId=$deploymentId" >> $GITHUB_OUTPUT
+        
+      - name: Debug Deployment ID
         run: |
-          deploymentId=$(aws deploy create-deployment --application-name \
-          iic2173-app --deployment-group-name group-iic2173 --region us-east-1 \
-          --s3-location bucket=iic2173-back,key=deploy.zip,bundleType=zip \
-          --description --file-exists-behavior OVERWRITE "Automatic deployment from githubactions commit ${{github.sha}}" | jq -r '.deploymentId')
-          echo "DeploymentId=$deploymentId" >> $GITHUB_OUTPUT
-    
+          echo "Deployment ID: ${{ steps.create-deployment-trigger.outputs.deploymentId }}"
+        
       - name: Wait for deployment to finish
         run: |
-          aws deploy wait deployment-successful --deployment-id ${{ steps.create-deployment-trigger.outputs.deploymentId }} --region us-east-1
+            aws deploy wait deployment-successful --deployment-id ${{ steps.create-deployment-trigger.outputs.deploymentId }} --region us-east-1
+        
