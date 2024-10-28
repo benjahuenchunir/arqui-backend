@@ -292,7 +292,7 @@ def upsert_request(
     return db_request
 
 
-def update_request(
+async def update_request(
     db: Session, request_id: str, validation: request_schemas.RequestValidation
 ):
     """Update a request."""
@@ -317,23 +317,39 @@ def update_request(
     if validation.valid:
         db_request.status = models.RequestStatusEnum.APPROVED  # type: ignore
 
-        if db_request.wallet and db_request.user_id:  # type: ignore
-            update_balance(
-                db,
-                db_request.user_id,  # type: ignore
-                db_request.quantity * int(BET_PRICE),  # type: ignore
-                add=False,
-            )
-
     else:
         db_request.status = models.RequestStatusEnum.REJECTED  # type: ignore
         db_fixture = (
             db.query(models.FixtureModel).filter_by(id=db_request.fixture_id).one()
         )
         db_fixture.remaining_bets += db_request.quantity  # type: ignore
+        asyncio.create_task(return_money(db, request_id))
 
     db.commit()
     db.refresh(db_request)
+    return db_request
+
+
+async def return_money(db: Session, request_id: str):
+    """Return money for a rejected request."""
+    await asyncio.sleep(5)
+    db_request = (
+        db.query(models.RequestModel)
+        .filter(models.RequestModel.request_id == request_id)
+        .one_or_none()
+    )
+    if db_request is None:
+        return None
+
+    db_user = db.query(models.UserModel).filter_by(id=db_request.user_id).one_or_none()
+    if db_user is None:
+        return None
+
+    update_balance(db, db_user.id, db_request.quantity * BET_PRICE, add=True)  # type: ignore
+
+    db.commit()
+    db.refresh(db_request)
+    db.refresh(db_user)
     return db_request
 
 
