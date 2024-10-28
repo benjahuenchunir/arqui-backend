@@ -43,6 +43,9 @@ jobs:
         MQTT_USER: ${{ secrets.MQTT_USER }}
         MQTT_PASSWORD: ${{ secrets.MQTT_PASSWORD }}
         GROUP_ID: ${{ vars.GROUP_ID }}
+        TRANSBANK_REDIRECT_URL: ${{ vars.TRANSBANK_REDIRECT_URL }}
+        SESSION_ID: ${{ vars.SESSION_ID }}
+        ENV: production
 
     - name: Install Python
       run: sudo apt-get install -y python3 python3-pip

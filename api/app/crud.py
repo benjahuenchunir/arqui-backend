@@ -4,22 +4,26 @@
 
 import asyncio
 import os
+import uuid
 import warnings
-from datetime import datetime, timezone
+from datetime import datetime
 from typing import Optional
 
 from sqlalchemy.exc import SAWarning
 from sqlalchemy.orm import Session, aliased
 from sqlalchemy.sql import func
 
-from . import broker_schema, models, schemas
+from db import models
+
+from .schemas import request_schemas
 
 warnings.filterwarnings("ignore", category=SAWarning)
 
-BET_PRICE = os.getenv("BET_PRICE")
+BET_PRICE = int(os.getenv("BET_PRICE"))
+GROUP_ID = os.getenv("GROUP_ID")
 
 
-def upsert_fixture(db: Session, fixture: broker_schema.WholeFixture):
+def upsert_fixture(db: Session, fixture: request_schemas.WholeFixture):
     """Upsert a fixture."""
 
     # Upsert FixtureModel
@@ -150,7 +154,7 @@ def upsert_fixture(db: Session, fixture: broker_schema.WholeFixture):
 def update_fixture(
     db: Session,
     fixture_id: int,
-    fixture: broker_schema.FixtureUpdate,
+    fixture: request_schemas.FixtureUpdate,
 ):
     """Update a fixture."""
     db_fixture = (
@@ -242,7 +246,8 @@ def get_fixture_by_id(db: Session, fixture_id: int):
 
 def upsert_request(
     db: Session,
-    request: broker_schema.Request,
+    request: request_schemas.Request,
+    wallet: bool = False,
 ):
     """Create a new request."""
 
@@ -262,6 +267,7 @@ def upsert_request(
         deposit_token=request.deposit_token,
         datetime=request.datetime,
         quantity=request.quantity,
+        wallet=wallet,
         seller=request.seller,
         status=models.RequestStatusEnum.PENDING,
     )
@@ -281,12 +287,13 @@ def upsert_request(
     # db_fixture.remaining_bets -= request.quantity
 
     db.commit()
+    db.refresh(db_fixture)
     db.refresh(db_request)
     return db_request
 
 
-def update_request(
-    db: Session, request_id: str, validation: broker_schema.RequestValidation
+async def update_request(
+    db: Session, request_id: str, validation: request_schemas.RequestValidation
 ):
     """Update a request."""
 
@@ -308,27 +315,45 @@ def update_request(
         return None
 
     if validation.valid:
-        db_request.status = models.RequestStatusEnum.APPROVED
+        db_request.status = models.RequestStatusEnum.APPROVED  # type: ignore
 
     else:
-        db_request.status = models.RequestStatusEnum.REJECTED
+        db_request.status = models.RequestStatusEnum.REJECTED  # type: ignore
         db_fixture = (
             db.query(models.FixtureModel).filter_by(id=db_request.fixture_id).one()
         )
-        db_fixture.remaining_bets += db_request.quantity
-
-        # db_request.fixture.remaining_bets += db_request.quantity
-        # if db_request.user != None:
-        #     update_balance(
-        #         db, db_request.user.id, db_request.quantity * BET_PRICE, add=True
-        #     )
+        db_fixture.remaining_bets += db_request.quantity  # type: ignore
+        asyncio.create_task(return_money(db, request_id))
 
     db.commit()
     db.refresh(db_request)
     return db_request
 
 
-async def link_request(db: Session, link: schemas.Link):
+async def return_money(db: Session, request_id: str):
+    """Return money for a rejected request."""
+    await asyncio.sleep(5)
+    db_request = (
+        db.query(models.RequestModel)
+        .filter(models.RequestModel.request_id == request_id)
+        .one_or_none()
+    )
+    if db_request is None:
+        return None
+
+    db_user = db.query(models.UserModel).filter_by(id=db_request.user_id).one_or_none()
+    if db_user is None:
+        return None
+
+    update_balance(db, db_user.id, db_request.quantity * BET_PRICE, add=True)  # type: ignore
+
+    db.commit()
+    db.refresh(db_request)
+    db.refresh(db_user)
+    return db_request
+
+
+async def link_request(db: Session, link: request_schemas.Link):
     """Link a request to a user."""
     await asyncio.sleep(5)
     db_request = (
@@ -351,7 +376,7 @@ async def link_request(db: Session, link: schemas.Link):
     return db_request
 
 
-def create_user(db: Session, user: schemas.FrontendUser):
+def create_user(db: Session, user: request_schemas.User):
     """Create a new user."""
     # Check if user already exists
     db_user = db.query(models.UserModel).filter_by(id=user.uid).one_or_none()
@@ -393,6 +418,15 @@ def update_balance(db: Session, user_id: str, amount: float, add: bool = True):
     return db_user
 
 
+def get_request_by_id(db: Session, request_id: str):
+    """Get request details by request ID."""
+    return (
+        db.query(models.RequestModel)
+        .filter(models.RequestModel.request_id == request_id)
+        .one_or_none()
+    )
+
+
 def pay_bets(db: Session, fixture_id: int):
     """Pay bets for a finished fixture."""
 
@@ -405,7 +439,7 @@ def pay_bets(db: Session, fixture_id: int):
         db.query(models.RequestModel)
         .filter(models.RequestModel.fixture_id == fixture_id)
         .filter(models.RequestModel.status == models.RequestStatusEnum.APPROVED)
-        .filter(models.RequestModel.group_id == 2)
+        .filter(models.RequestModel.group_id == GROUP_ID)
         .all()
     )
 
@@ -440,3 +474,23 @@ def pay_bets(db: Session, fixture_id: int):
 
     db.commit()
     return db_requests
+
+
+def create_transaction(db: Session, transaction: request_schemas.RequestShort):
+    """Create a new transaction."""
+    db_transaction = models.TransactionModel(
+        request_id=uuid.uuid4(),
+        fixture_id=transaction.fixture_id,
+        user_id=transaction.uid,
+        quantity=transaction.quantity,
+        result=transaction.result,
+    )
+    db.add(db_transaction)
+    db.commit()
+    db.refresh(db_transaction)
+    return db_transaction
+
+
+def get_transaction(db: Session, token: str):
+    """Get transactions by user ID."""
+    return db.query(models.TransactionModel).filter_by(token=token).one_or_none()

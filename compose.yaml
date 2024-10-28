@@ -12,15 +12,20 @@ services:
   arquisis-api:
     image: api:latest
     build:
-      context: ./api
-      dockerfile: Dockerfile
+      context: ./
+      dockerfile: ./api/Dockerfile
+    volumes:
+      - ./api/app:/api/app
+      - ./db:/api/db
+    command: uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
     ports:
       - "8001-8003:8000"
     depends_on:
       - arquisis-database
       - arquisis-publisher
+      - arquisis-jobs-master
     environment:
-      ENV: production
+      ENV: ${ENV}
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@arquisis-database:5432/${POSTGRES_DB_NAME}
       POST_TOKEN: ${POST_TOKEN}
       PATH_FIXTURES: ${PATH_FIXTURES}
@@ -29,10 +34,16 @@ services:
       PUBLISHER_HOST: arquisis-publisher
       PUBLISHER_PORT: 7999
 
+      JOBS_MASTER_HOST: arquisis-jobs-master
+      JOBS_MASTER_PORT: 7998
+
       GROUP_ID: ${GROUP_ID}
 
       BET_PRICE: 1000
       BET_LIMIT: 40
+
+      SESSION_ID: ${SESSION_ID}
+      TRANSBANK_REDIRECT_URL: ${TRANSBANK_REDIRECT_URL}
     deploy:
       replicas: 3
       restart_policy:
@@ -46,7 +57,7 @@ services:
     depends_on:
       - arquisis-api
     environment:
-      ENV: production
+      ENV: ${ENV}
 
       MQTT_HOST: ${MQTT_HOST}
       MQTT_PORT: ${MQTT_PORT}
@@ -59,14 +70,14 @@ services:
       API_HOST: arquisis-api
       API_PORT: 8000
     restart: on-failure
-  
+
   arquisis-publisher:
     image: publisher:latest
     build:
       context: ./publisher
       dockerfile: Dockerfile
     environment:
-      ENV: production
+      ENV: ${ENV}
 
       MQTT_HOST: ${MQTT_HOST}
       MQTT_PORT: ${MQTT_PORT}
@@ -75,6 +86,53 @@ services:
 
       POST_TOKEN: ${POST_TOKEN}
     restart: on-failure
+
+  arquisis-jobs-master:
+    image: jobs-master:latest
+    build:
+      context: ./
+      dockerfile: ./jobs_master/Dockerfile
+    command: uvicorn producer:app --reload --host 0.0.0.0 --port 7998
+    volumes:
+      - ./jobs_master:/opt/
+      - ./db:/opt/db
+    expose:
+      - 7998
+    ports:
+      - '7998:7998'
+    environment:
+      ENV: ${ENV}
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@arquisis-database:5432/${POSTGRES_DB_NAME}
+      CELERY_BROKER_URL: redis://redis-broker:6379/0
+      CELERY_RESULT_BACKEND: redis://redis-broker:6379/0
+      GROUP_ID: ${GROUP_ID}
+    restart: on-failure
+    depends_on:
+      - redis-broker
+  
+  redis-broker:
+    image: redis:7
+    volumes:
+      - ./redis/redis.conf:/usr/local/etc/redis/redis.conf
+
+  consumer:
+    build:
+      context: ./
+      dockerfile: ./jobs_master/Dockerfile
+    deploy:
+      replicas: 2
+    command: celery -A consumer.celery_app worker --loglevel=INFO --purge --concurrency=1
+    volumes:
+      - ./jobs_master:/opt/
+      - ./db:/opt/db
+    depends_on:
+      - arquisis-jobs-master
+    environment:
+      ENV: ${ENV}
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@arquisis-database:5432/${POSTGRES_DB_NAME}
+      CELERY_BROKER_URL: redis://redis-broker:6379/0
+      CELERY_RESULT_BACKEND: redis://redis-broker:6379/0
+      GROUP_ID: ${GROUP_ID}
 
 volumes:
   db_data:
