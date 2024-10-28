@@ -235,14 +235,14 @@ def upsert_request(
     response_model=response_schemas.Request,
     status_code=status.HTTP_200_OK,
 )
-def update_request(
+async def update_request(
     request_id: str,
     request: request_schemas.RequestValidation,
     db: Session = Depends(get_db),
     token: None = Depends(verify_post_token),
 ):
     """Update a request."""
-    response = crud.update_request(db, request_id, request)
+    response = await crud.update_request(db, request_id, request)
     if response is None:
         raise HTTPException(status_code=404, detail="Request not found")
     return response
