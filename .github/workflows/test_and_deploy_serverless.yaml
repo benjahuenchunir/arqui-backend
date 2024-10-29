@@ -6,6 +6,7 @@ on:
       - main
     paths:
       - 'generar_boleta/**'
+      - '.github/workflows/test_and_deploy_serverless.yaml'
 
 jobs:
   test_and_deploy:
