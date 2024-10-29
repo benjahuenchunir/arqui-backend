@@ -149,3 +149,7 @@ class CommitTransaction(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class UserInfo(BaseModel):
+    user_id: str
