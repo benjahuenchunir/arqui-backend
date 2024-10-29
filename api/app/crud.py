@@ -317,14 +317,7 @@ async def update_request(
 
     if validation.valid:
         db_request.status = models.RequestStatusEnum.APPROVED  # type: ignore
-
-        if db_request.user_id:  # type: ignore
-            url = "http://arquisis-jobs-master:7998/job"
-            headers = {"Content-Type": "application/json"}
-            user = {"user_id": db_request.user_id}
-            job_id = requests.post(url, headers=headers, json=user).json()
-            db_user = db.query(models.UserModel).filter_by(id=db_request.user_id).one()
-            db_user.job_id = job_id["job_id"]  # type: ignore
+        asyncio.create_task(assign_job(db, db_request.request_id))  # type: ignore
 
     else:
         db_request.status = models.RequestStatusEnum.REJECTED  # type: ignore
@@ -337,6 +330,33 @@ async def update_request(
     db.commit()
     db.refresh(db_request)
     return db_request
+
+
+async def assign_job(db: Session, request_id: str):
+    """Assign a job to a user."""
+    await asyncio.sleep(10)
+
+    db_request = (
+        db.query(models.RequestModel).filter_by(request_id=request_id).one_or_none()
+    )
+
+    if db_request is None:
+        return None
+
+    db_user = db.query(models.UserModel).filter_by(id=db_request.user_id).one_or_none()
+
+    if db_user is None:
+        return None
+
+    url = "http://arquisis-jobs-master:7998/job"
+    headers = {"Content-Type": "application/json"}
+    user = {"user_id": db_user.id}
+    job_id = requests.post(url, headers=headers, json=user).json()
+    db_user.job_id = job_id["job_id"]  # type: ignore
+
+    db.commit()
+    db.refresh(db_user)
+    return db_user
 
 
 async def return_money(db: Session, request_id: str):
@@ -463,6 +483,9 @@ def pay_bets(db: Session, fixture_id: int):
 
     for db_request in db_requests:
         if db_request.paid:
+            continue
+
+        if not db_request.user_id:
             continue
 
         db_user = db.query(models.UserModel).filter_by(id=db_request.user_id).one()
