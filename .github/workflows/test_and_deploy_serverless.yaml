@@ -22,6 +22,8 @@ jobs:
           python-version: 3.12
       
       - name: Run unit tests
+        env:
+          S3_BUCKET_NAME: ${{ secrets.S3_BUCKET_NAME }}
         run: |
           cd generar_boleta
           python -m pip install --upgrade pip
