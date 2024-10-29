@@ -3,7 +3,6 @@
 # pylint: disable=missing-docstring
 
 import logging
-from typing import Dict, List
 
 from celery import chain, chord, group
 from celery.result import AsyncResult

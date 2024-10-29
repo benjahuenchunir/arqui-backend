@@ -8,7 +8,7 @@ if os.getenv("ENV") != "production":
 
     load_dotenv()
 
-from typing import Dict, List, Set
+from typing import Dict, List
 
 from db import models
 from db.database import engine, get_db

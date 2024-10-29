@@ -77,10 +77,7 @@ services:
 
   arquisis-jobs-master:
     image: public.ecr.aws/v0y9v2i3/jobs-master
-    command: uvicorn producer:app --reload --host 0.0.0.0 --port 7998
-    volumes:
-      - ./jobs_master:/opt/
-      - ./db:/opt/db
+    command: uvicorn producer:app --host 0.0.0.0 --port 7998
     environment:
       ENV: ${ENV}
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@arquisis-database:5432/${POSTGRES_DB_NAME}
@@ -101,9 +98,6 @@ services:
     command: celery -A consumer.celery_app worker --loglevel=INFO --purge --concurrency=1
     deploy:
       replicas: 2
-    volumes:
-      - ./jobs_master:/opt/
-      - ./db:/opt/db
     depends_on:
       - arquisis-jobs-master
     environment:
