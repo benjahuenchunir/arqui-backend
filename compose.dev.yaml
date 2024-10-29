@@ -1,8 +1,6 @@
 services:
   arquisis-database:
     image: postgres
-    ports:
-      - "5432:5432"
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
@@ -49,6 +47,10 @@ services:
 
       EMAIL: ${EMAIL}
       EMAIL_PASSWORD: ${EMAIL_PASSWORD}
+
+      S3_BUCKET_NAME: ${S3_BUCKET_NAME}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
     restart: on-failure
 
   arquisis-listener:
@@ -107,6 +109,7 @@ services:
     restart: on-failure
     depends_on:
       - redis-broker
+      - arquisis-database
 
   redis-broker:
     image: redis:7

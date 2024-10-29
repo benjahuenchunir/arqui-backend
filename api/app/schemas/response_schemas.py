@@ -92,6 +92,7 @@ class RequestShort(BaseModel):
     quantity: int
     result: str
     league_name: str
+    url_boleta: Optional[str] = None
 
     class Config:
         from_attributes = True

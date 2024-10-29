@@ -60,7 +60,6 @@ def on_history(payload):
     for i, match in enumerate(matches):
         logging.info("Processing match %s of %s", str(i + 1), str(len(matches)))
         try:
-            print(match)
             response = requests.patch(
                 f"http://{API_HOST}:{API_PORT}/{PATH_FIXTURES}/{int(match['fixture']['id'])}",
                 json=match,

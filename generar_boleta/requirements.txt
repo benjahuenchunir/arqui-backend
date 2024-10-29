@@ -1,0 +1,4 @@
+reportlab
+boto3
+python-dotenv
+Pillow==8.2.0

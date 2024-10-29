@@ -107,8 +107,6 @@ def calculate_historical_accuracies(
 def calculate_league_benefits(results) -> Dict[str, Dict[int, float]]:
     """Return the benefits for each fixture in the league."""
     future_matches, accuracies = results
-    print(future_matches)
-    print(accuracies)
     db_fixtures = (
         db()
         .query(models.FixtureModel)
@@ -119,7 +117,6 @@ def calculate_league_benefits(results) -> Dict[str, Dict[int, float]]:
     ponds = {fixture.id: 0.0 for fixture in db_fixtures}
 
     accuracy_values = {int(k): v for k, v in accuracies["accuracies"].items()}
-    print(accuracy_values)
 
     for fixture in db_fixtures:
         home_team_accuracy = accuracy_values.get(fixture.id_home_team, 0)  # type: ignore

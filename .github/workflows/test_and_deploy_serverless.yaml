@@ -1,0 +1,52 @@
+name: Test and Deploy Serverless Function
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'generar_boleta/**'
+
+jobs:
+  test_and_deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Set up Python
+      uses: actions/setup-python@v3
+      with:
+        python-version: 3.8
+
+    # - name: Install dependencies
+    #   run: |
+    #     cd generar_boleta
+    #     python -m pip install --upgrade pip
+    #     pip install -r generar_boleta/requirements.txt
+
+    # - name: Run tests
+    #   run: |
+    #     cd generar_boleta
+    #     pytest
+
+    - name: Install Serverless Framework
+      run: npm install -g serverless
+
+    - name: Package Lambda Function
+      run: |
+        cd generar_boleta
+        pip install -r requirements.txt
+        cd venv/lib/python3.8/site-packages
+        zip -r9 ${OLDPWD}/function.zip .
+        cd ${OLDPWD}
+        zip -g function.zip handler.py
+
+    - name: Deploy to AWS
+      if: success()
+      env:
+        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      run: |
+        serverless deploy
