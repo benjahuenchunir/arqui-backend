@@ -9,6 +9,7 @@ import warnings
 from datetime import datetime
 from typing import Optional
 
+import requests
 from sqlalchemy.exc import SAWarning
 from sqlalchemy.orm import Session, aliased
 from sqlalchemy.sql import func
@@ -316,6 +317,14 @@ async def update_request(
 
     if validation.valid:
         db_request.status = models.RequestStatusEnum.APPROVED  # type: ignore
+
+        if db_request.user_id:  # type: ignore
+            url = "http://arquisis-jobs-master:7998/job"
+            headers = {"Content-Type": "application/json"}
+            user = {"user_id": db_request.user_id}
+            job_id = requests.post(url, headers=headers, json=user).json()
+            db_user = db.query(models.UserModel).filter_by(id=db_request.user_id).one()
+            db_user.job_id = job_id["job_id"]  # type: ignore
 
     else:
         db_request.status = models.RequestStatusEnum.REJECTED  # type: ignore
