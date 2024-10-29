@@ -24,6 +24,8 @@ jobs:
       - name: Run unit tests
         run: |
           cd generar_boleta
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
           python -m unittest test_handler.py
 
       - name: Package Lambda Function
