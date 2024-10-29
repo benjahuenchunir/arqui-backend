@@ -7,3 +7,4 @@ uuid6
 transbank-sdk
 python-dotenv
 boto3
+reportlab

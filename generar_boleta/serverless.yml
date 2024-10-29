@@ -1,7 +1,4 @@
-# "org" ensures this Service is used with the correct Serverless Framework Access Key.
-org: entregasarqui
-# "service" is the name of this project. This will also be added to your AWS resource names.
-
+org: arquisis1234
 service: generar-boleta
 
 provider:
@@ -11,7 +8,6 @@ provider:
   environment:
     S3_BUCKET_NAME: boletasg2arquisis
 
-  # Definición de permisos IAM
   iamRoleStatements:
     - Effect: "Allow"
       Action:
@@ -27,10 +23,5 @@ functions:
           path: /generar_boleta
           method: post
 
-# resources:
-#   Resources:
-#     BoletaBucket:
-#       Type: AWS::S3::Bucket
-#       Properties:
-#         BucketName: ${self:provider.environment.S3_BUCKET_NAME}
-#         AccessControl: PublicRead
+package:
+  artifact: function.zip

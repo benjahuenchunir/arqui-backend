@@ -24,6 +24,7 @@ def invocar_generar_boleta(data: dict):
         )
         # Leer el resultado de la respuesta
         result = json.loads(response["Payload"].read())
+        print(result)
         url = json.loads(result.get("body", "{}")).get("url")
         if not url:
             raise ValueError("No se pudo obtener la URL del PDF.")

@@ -2,6 +2,9 @@ import json
 import os
 import boto3
 from reportlab.pdfgen import canvas
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # Cliente de S3
 s3 = boto3.client('s3')
@@ -45,7 +48,6 @@ def lambda_handler(event, context):
                 Key=nombre_archivo_s3,
                 Body=pdf,
                 ContentType='application/pdf',
-                ACL='public-read'
             )
         
         # Generar la URL pública del archivo en S3
