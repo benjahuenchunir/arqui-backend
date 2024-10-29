@@ -38,7 +38,7 @@ jobs:
       run: |
         cd generar_boleta
         pip install -r requirements.txt
-        cd venv/lib/python3.8/site-packages
+        cd .venv/lib/python3.8/site-packages
         zip -r9 ${OLDPWD}/function.zip .
         cd ${OLDPWD}
         zip -g function.zip handler.py
