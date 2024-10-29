@@ -1,0 +1,36 @@
+# "org" ensures this Service is used with the correct Serverless Framework Access Key.
+org: entregasarqui
+# "service" is the name of this project. This will also be added to your AWS resource names.
+
+service: generar-boleta
+
+provider:
+  name: aws
+  runtime: python3.12
+  region: us-east-1
+  environment:
+    S3_BUCKET_NAME: boletasg2arquisis
+
+  # Definición de permisos IAM
+  iamRoleStatements:
+    - Effect: "Allow"
+      Action:
+        - "s3:PutObject"
+      Resource:
+        - "arn:aws:s3:::${self:provider.environment.S3_BUCKET_NAME}/*"
+
+functions:
+  generarBoleta:
+    handler: handler.lambda_handler
+    events:
+      - httpApi:
+          path: /generar_boleta
+          method: post
+
+# resources:
+#   Resources:
+#     BoletaBucket:
+#       Type: AWS::S3::Bucket
+#       Properties:
+#         BucketName: ${self:provider.environment.S3_BUCKET_NAME}
+#         AccessControl: PublicRead
