@@ -87,6 +87,7 @@ services:
     restart: on-failure
     depends_on:
       - redis-broker
+      - arquisis-database
   
   redis-broker:
     image: redis:7

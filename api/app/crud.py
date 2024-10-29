@@ -17,6 +17,7 @@ from sqlalchemy.sql import func
 from db import models
 
 from .schemas import request_schemas
+from .lambda_client import invocar_generar_boleta
 
 warnings.filterwarnings("ignore", category=SAWarning)
 
@@ -318,7 +319,8 @@ async def update_request(
     if validation.valid:
         db_request.status = models.RequestStatusEnum.APPROVED  # type: ignore
         asyncio.create_task(assign_job(db, db_request.request_id))  # type: ignore
-
+        print("Antes de generar boleta")
+        asyncio.create_task(generate_ticket(db, db_request.request_id))  # type: ignore
     else:
         db_request.status = models.RequestStatusEnum.REJECTED  # type: ignore
         db_fixture = (
@@ -331,6 +333,33 @@ async def update_request(
     db.refresh(db_request)
     return db_request
 
+async def generate_ticket(db: Session, request_id: str):
+    await asyncio.sleep(10)
+    try:
+        db_request = (
+        db.query(models.RequestModel).filter_by(request_id=request_id).one_or_none()
+        )
+        if db_request is None:
+            return None
+        
+        db_user = db.query(models.UserModel).filter_by(id=db_request.user_id).one_or_none()
+
+        if db_user is None:
+            return None
+    
+        url = invocar_generar_boleta(
+            {
+                "grupo": GROUP_ID,
+                "usuario": db_user.email,
+                "equipos": db_request.fixture.home_team.team.name + " vs " + db_request.fixture.away_team.team.name,
+            }
+            )
+        print(url)
+        db_request.url_boleta = url
+        db.commit()
+        db.refresh(db_request)
+    except Exception as e:
+        print("ERROR generando boleta", e)
 
 async def assign_job(db: Session, request_id: str):
     """Assign a job to a user."""

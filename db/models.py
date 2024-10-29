@@ -175,6 +175,7 @@ class RequestModel(Base):
 
     status = Column(SqlEnum(RequestStatusEnum), default=RequestStatusEnum.PENDING)
     user_id = Column(String, ForeignKey("users.id"), nullable=True, default=None)
+    url_boleta = Column(String(255), nullable=True)
 
     paid = Column(Boolean, default=False)
 
