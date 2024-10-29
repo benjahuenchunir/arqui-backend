@@ -29,7 +29,12 @@ async def get_job(_id: str):
     if result.state == "PENDING":
         return {"job_id": _id, "status": "Pending"}
     elif result.state == "SUCCESS":
-        return {"job_id": _id, "status": "Completed", "result": result.result}
+        return {
+            "job_id": _id,
+            "status": "Completed",
+            "result": result.result,
+            "last_updated": result.date_done,
+        }
     elif result.state == "FAILURE":
         return {"job_id": _id, "status": "Failed", "error": str(result.result)}
     else:
@@ -50,9 +55,8 @@ async def publish_message(user_info: UserInfo):
         )
 
         # Execute the chain and wait for the final result
-        league_benefits = result_chain.apply_async(task_id=user_id).get(timeout=10)  # type: ignore
-
-        return league_benefits
+        final_result = result_chain.apply_async()
+        return {"job_id": final_result.id}  # type: ignore
 
     except Exception as e:
         logging.error(f"Error processing job: {str(e)}")

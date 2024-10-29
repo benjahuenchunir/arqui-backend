@@ -144,6 +144,7 @@ class UserModel(Base):
     id = Column(String, primary_key=True, index=True)
     email = Column(String(255), unique=True, index=True)
     wallet = Column(Float, default=0)
+    job_id = Column(String(255), nullable=True)
 
     requests = relationship("RequestModel", back_populates="user")
 

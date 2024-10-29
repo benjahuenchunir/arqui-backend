@@ -501,3 +501,8 @@ def create_transaction(db: Session, transaction: request_schemas.RequestShort):
 def get_transaction(db: Session, token: str):
     """Get transactions by user ID."""
     return db.query(models.TransactionModel).filter_by(token=token).one_or_none()
+
+
+def get_recommendations(db: Session, ids: list):
+    """Get recommended fixtures."""
+    return db.query(models.FixtureModel).filter(models.FixtureModel.id.in_(ids)).all()
