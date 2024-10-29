@@ -81,6 +81,11 @@ class AvailableFixture(BaseModel):
         from_attributes = True
 
 
+class RecommendedFixture(BaseModel):
+    fixtures: List[AvailableFixture]
+    last_updated: dt
+
+
 class RequestShort(BaseModel):
     request_id: str
     status: str
