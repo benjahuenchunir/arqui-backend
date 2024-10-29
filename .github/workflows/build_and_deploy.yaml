@@ -6,6 +6,7 @@ on:
       - main
     paths-ignore:
       - 'docs/**'
+      - 'generar_boleta/**'
 
 permissions:
   id-token: write

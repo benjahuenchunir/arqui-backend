@@ -1,0 +1,27 @@
+org: arquisis1234
+service: generar-boleta
+
+provider:
+  name: aws
+  runtime: python3.12
+  region: us-east-1
+  environment:
+    S3_BUCKET_NAME: boletasg2arquisis
+
+  iamRoleStatements:
+    - Effect: "Allow"
+      Action:
+        - "s3:PutObject"
+      Resource:
+        - "arn:aws:s3:::${self:provider.environment.S3_BUCKET_NAME}/*"
+
+functions:
+  generarBoleta:
+    handler: handler.lambda_handler
+    events:
+      - httpApi:
+          path: /generar_boleta
+          method: post
+
+package:
+  artifact: function.zip
