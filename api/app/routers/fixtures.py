@@ -117,6 +117,9 @@ def get_recommended_fixtures(user_id: str, db: Session = Depends(get_db)):
 
     job_id = db_user.job_id
 
+    if job_id is None:
+        return {"fixtures": [], "last_updated": datetime.datetime.now()}
+
     url = f"http://arquisis-jobs-master:7998/job/{job_id}"
     headers = {"Content-Type": "application/json"}
     user_recommendations = requests.get(url, headers=headers).json()
