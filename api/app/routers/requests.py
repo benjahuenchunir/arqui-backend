@@ -18,6 +18,9 @@ from ..dependencies import check_backend_bets  # ? But why tho?
 from ..dependencies import check_balance, check_bets, get_location, verify_post_token
 from ..schemas import request_schemas, response_schemas
 from ..transbank_transaction import webpay_plus_transaction
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 
 PATH_REQUESTS = os.getenv("PATH_REQUESTS")
 if not PATH_REQUESTS:
@@ -40,6 +43,17 @@ if not SESSION_ID:
 
 if not TRANSBANK_REDIRECT_URL:
     print("TRANSBANK_REDIRECT_URL environment variable not set")
+    sys.exit(1)
+    
+EMAIL = os.getenv("EMAIL")
+EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD")
+
+if not EMAIL:
+    print("EMAIL environment variable not set")
+    sys.exit(1)
+
+if not EMAIL_PASSWORD:
+    print("EMAIL_PASSWORD environment variable not set")
     sys.exit(1)
 
 router = APIRouter(
@@ -168,6 +182,30 @@ async def commit_transaction(
             valid=valid,
         ),
     )
+    
+    user = crud.get_user(db, transaction.user_id) # type: ignore
+    if user is None:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    message = MIMEMultipart()
+    message["From"] = EMAIL # type: ignore
+    message["To"] = user.email # type: ignore
+    message["Subject"] = "Compra confirmada"
+    body = f"¡Hola! Tu compra ha sido confirmada. ¡Gracias por tu apuesta! \n\n" \
+              f"Fixture: {transaction.fixture_id} \n" \
+                f"Cantidad: {transaction.quantity} \n" \
+                f"Total: {transaction.quantity * BET_PRICE} \n\n" \
+                f"¡Buena suerte!"
+    message.attach(MIMEText(body, "plain"))
+
+    try:
+        with smtplib.SMTP("smtp.gmail.com", 587) as server:
+            server.starttls()
+            server.login(EMAIL, EMAIL_PASSWORD) # type: ignore
+            server.send_message(message)
+        print("Email sent successfully!")
+    except Exception as e:
+        print(f"Error sending email: {e}")
 
     db.commit()
     return {"status": "ABORTED"} if aborted else confirmed_transaction

@@ -1,8 +1,6 @@
 services:
   arquisis-database:
     image: postgres
-    ports:
-      - "5432:5432"
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
@@ -46,10 +44,10 @@ services:
 
       SESSION_ID: ${SESSION_ID}
       TRANSBANK_REDIRECT_URL: ${TRANSBANK_REDIRECT_URL}
-    # deploy:
-    #   replicas: 3
-    #   restart_policy:
-    #     condition: on-failure
+
+      EMAIL: ${EMAIL}
+      EMAIL_PASSWORD: ${EMAIL_PASSWORD}
+    restart: on-failure
 
   arquisis-listener:
     image: listener:latest
@@ -98,10 +96,6 @@ services:
     volumes:
       - ./jobs_master:/opt/
       - ./db:/opt/db
-    expose:
-      - 7998
-    ports:
-      - '7998:7998'
     environment:
       ENV: ${ENV}
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@arquisis-database:5432/${POSTGRES_DB_NAME}
@@ -111,7 +105,7 @@ services:
     restart: on-failure
     depends_on:
       - redis-broker
-
+  
   redis-broker:
     image: redis:7
     volumes:
@@ -121,8 +115,6 @@ services:
     build:
       context: ./
       dockerfile: ./jobs_master/Dockerfile
-    # deploy:
-    #   replicas: 2
     command: celery -A consumer.celery_app worker --loglevel=INFO --purge --concurrency=1
     volumes:
       - ./jobs_master:/opt/
