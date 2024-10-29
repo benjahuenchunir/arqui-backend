@@ -7,6 +7,7 @@ on:
     paths-ignore:
       - 'docs/**'
       - 'generar_boleta/**'
+      - '.github/workflows/test_and_deploy_serverless.yaml'
 
 jobs:
   build-and-test:
