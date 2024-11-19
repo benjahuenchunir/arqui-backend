@@ -18,6 +18,10 @@ from db import models
 
 from .schemas import request_schemas
 from .lambda_client import invocar_generar_boleta
+from .routers.requests import notify_clients
+
+from .schemas.response_schemas import RequestShort
+from sqlalchemy import desc
 
 warnings.filterwarnings("ignore", category=SAWarning)
 
@@ -291,6 +295,12 @@ def upsert_request(
     db.commit()
     db.refresh(db_fixture)
     db.refresh(db_request)
+    
+    # Notify connected clients
+    print("User id in upsert is ", db_request.user_id)
+    requests = get_requests(db, db_request.user_id)
+    notify_clients(db_request.user_id, requests)
+    
     return db_request
 
 
@@ -331,6 +341,12 @@ async def update_request(
 
     db.commit()
     db.refresh(db_request)
+    
+    # Notify connected clients
+    print("User id in update is ", db_request.user_id)
+    requests = get_requests(db, db_request.user_id)
+    notify_clients(db_request.user_id, requests)
+    
     return db_request
 
 async def generate_ticket(db: Session, request_id: str):
@@ -431,6 +447,12 @@ async def link_request(db: Session, link: request_schemas.Link):
 
     db.commit()
     db.refresh(db_request)
+    
+    # Notify connected clients
+    print("User id in link is ", db_request.user_id)
+    requests = get_requests(db, db_request.user_id)
+    notify_clients(db_request.user_id, requests)
+    
     return db_request
 
 
@@ -458,8 +480,9 @@ def get_user(db: Session, user_id: str):
 
 
 def get_requests(db: Session, user_id: str):
-    """Get requests by user ID."""
-    return db.query(models.RequestModel).filter_by(user_id=user_id).all()
+    """Get requests by user ID, sorted by datetime."""
+    requests = db.query(models.RequestModel).filter_by(user_id=user_id).order_by(desc(models.RequestModel.datetime)).all()
+    return [RequestShort.model_validate(request) for request in requests]
 
 
 def update_balance(db: Session, user_id: str, amount: float, add: bool = True):
