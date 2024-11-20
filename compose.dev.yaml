@@ -23,7 +23,7 @@ services:
     depends_on:
       - arquisis-database
       - arquisis-publisher
-      # - arquisis-jobs-master
+      - arquisis-jobs-master
     environment:
       ENV: ${ENV}
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@arquisis-database:5432/${POSTGRES_DB_NAME}
@@ -91,47 +91,47 @@ services:
       POST_TOKEN: ${POST_TOKEN}
     restart: on-failure
 
-  # arquisis-jobs-master:
-  #   image: jobs-master:latest
-  #   build:
-  #     context: ./
-  #     dockerfile: ./jobs_master/Dockerfile
-  #   command: uvicorn producer:app --reload --host 0.0.0.0 --port 7998
-  #   volumes:
-  #     - ./jobs_master:/opt/
-  #     - ./db:/opt/db
-  #   environment:
-  #     ENV: ${ENV}
-  #     DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@arquisis-database:5432/${POSTGRES_DB_NAME}
-  #     CELERY_BROKER_URL: redis://redis-broker:6379/0
-  #     CELERY_RESULT_BACKEND: redis://redis-broker:6379/0
-  #     GROUP_ID: ${GROUP_ID}
-  #   restart: on-failure
-  #   depends_on:
-  #     - redis-broker
-  #     - arquisis-database
+  arquisis-jobs-master:
+    image: jobs-master:latest
+    build:
+      context: ./
+      dockerfile: ./jobs_master/Dockerfile
+    command: uvicorn producer:app --reload --host 0.0.0.0 --port 7998
+    volumes:
+      - ./jobs_master:/opt/
+      - ./db:/opt/db
+    environment:
+      ENV: ${ENV}
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@arquisis-database:5432/${POSTGRES_DB_NAME}
+      CELERY_BROKER_URL: redis://redis-broker:6379/0
+      CELERY_RESULT_BACKEND: redis://redis-broker:6379/0
+      GROUP_ID: ${GROUP_ID}
+    restart: on-failure
+    depends_on:
+      - redis-broker
+      - arquisis-database
 
-  # redis-broker:
-  #   image: redis:7
-  #   volumes:
-  #     - ./redis/redis.conf:/usr/local/etc/redis/redis.conf
+  redis-broker:
+    image: redis:7
+    volumes:
+      - ./redis/redis.conf:/usr/local/etc/redis/redis.conf
 
-  # consumer:
-  #   build:
-  #     context: ./
-  #     dockerfile: ./jobs_master/Dockerfile
-  #   command: celery -A consumer.celery_app worker --loglevel=INFO --purge --concurrency=1
-  #   volumes:
-  #     - ./jobs_master:/opt/
-  #     - ./db:/opt/db
-  #   depends_on:
-  #     - arquisis-jobs-master
-  #   environment:
-  #     ENV: ${ENV}
-  #     DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@arquisis-database:5432/${POSTGRES_DB_NAME}
-  #     CELERY_BROKER_URL: redis://redis-broker:6379/0
-  #     CELERY_RESULT_BACKEND: redis://redis-broker:6379/0
-  #     GROUP_ID: ${GROUP_ID}
+  consumer:
+    build:
+      context: ./
+      dockerfile: ./jobs_master/Dockerfile
+    command: celery -A consumer.celery_app worker --loglevel=INFO --purge --concurrency=1
+    volumes:
+      - ./jobs_master:/opt/
+      - ./db:/opt/db
+    depends_on:
+      - arquisis-jobs-master
+    environment:
+      ENV: ${ENV}
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@arquisis-database:5432/${POSTGRES_DB_NAME}
+      CELERY_BROKER_URL: redis://redis-broker:6379/0
+      CELERY_RESULT_BACKEND: redis://redis-broker:6379/0
+      GROUP_ID: ${GROUP_ID}
 
 volumes:
   db_data:
