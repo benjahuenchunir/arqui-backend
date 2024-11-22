@@ -42,6 +42,6 @@ async def upsert_auction(
     token: None = Depends(verify_post_token),
 ):
     if auction.type == "offer":
-        crud.upsert_offer
+        crud.upsert_offer(db, auction)
     elif auction.type == "proposal":
-        crud.upsert_proposal
+        crud.upsert_proposal(db, auction)
