@@ -201,3 +201,33 @@ class TransactionModel(Base):
     quantity = Column(Integer)
     status = Column(String(255), default="pending")
     wallet = Column(Boolean, default=False)
+
+class OfferModel(Base):
+    """Base class for offers"""
+
+    __tablename__ = "offers"
+
+    id = Column(String, primary_key=True, index=True)
+    fixture_id = Column(Integer)
+    league_name = Column(String(255))
+    round = Column(String(255))
+    result = Column(String(255))
+    quantity = Column(Integer)
+    group_id = Column(Integer)
+    status = Column(String(255), default="available")
+
+
+class ProposalModel(Base):
+    """Base class for proposals"""
+
+    __tablename__ = "proposals"
+
+    id = Column(String, primary_key=True, index=True)
+    auction_id = Column(String)
+    fixture_id = Column(Integer)
+    league_name = Column(String(255))
+    round = Column(String(255))
+    result = Column(String(255))
+    quantity = Column(Integer)
+    group_id = Column(Integer)
+    status = Column(String(255), default="pending")

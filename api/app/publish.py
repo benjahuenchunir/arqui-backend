@@ -104,3 +104,48 @@ def publish_validation(request: response_schemas.RequestValidation):
     )
     if response.status_code != 200:
         raise RequestException(response.text)
+
+def create_offer(
+    db: Session,
+    ofr: request_schemas.OfferShort
+):
+    
+    db_fixture = crud.get_fixture_by_id(db, ofr.fixture_id)
+
+    if db_fixture is None:
+        return None
+    
+    offer = response_schemas.Auction(
+        auction_id = uuid.uuid4(),
+        proposal_id = "",
+        fixture_id = ofr.fixture_id,
+        league_name = db_fixture.league.name,
+        round = db_fixture.league.round,
+        result = ofr.result,
+        quantity = ofr.quantity,
+        group_id = GROUP_ID,
+        type = 'offer',
+    )
+
+    publish_offer(offer)
+
+    return offer
+
+def publish_offer(
+        offer: response_schemas.Auction
+):
+    """Publish an offer."""
+    # Publish the offer to the broker
+    url = f"http://{PUBLISHER_HOST}:{PUBLISHER_PORT}/offer"
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {POST_TOKEN}",
+    }
+    response = requests.post(
+        url,
+        json={"payload": offer.model_dump_json()},
+        headers=headers,
+        timeout=30,
+    )
+    if response.status_code != 200:
+        raise RequestException(response.text)

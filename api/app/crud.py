@@ -590,3 +590,9 @@ def get_transaction(db: Session, token: str):
 def get_recommendations(db: Session, ids: list):
     """Get recommended fixtures."""
     return db.query(models.FixtureModel).filter(models.FixtureModel.id.in_(ids)).all()
+
+def upsert_offer(db: Session, offer: request_schemas.Auction):
+    pass
+
+def upsert_proposal(db: Session, proposal: request_schemas.Auction):
+    pass
