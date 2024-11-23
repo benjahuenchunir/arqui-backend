@@ -1,16 +1,13 @@
-import datetime
 import os
 import sys
-from typing import List, Optional
 
-import uuid
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, Request, status, HTTPException
 from sqlalchemy.orm import Session
 
 from db.database import get_db
 
 from .. import crud, publish
-from ..dependencies import verify_post_token
+from ..dependencies import verify_post_token, verify_admin
 from ..schemas import request_schemas, response_schemas
 
 PATH_AUCTIONS = os.getenv("PATH_AUCTIONS")
@@ -96,15 +93,17 @@ async def update_auction(
 @router.post(
     '/offer',
     response_model=response_schemas.Auction,
-    status_code=status.HTTP_201_CREATED
+    status_code=status.HTTP_201_CREATED,
 )
 async def publish_offer(
     fixture_id: int,
     result: str,
     quantity: int,
+    user_id: str,
     db: Session = Depends(get_db),
-    token: None = Depends(verify_post_token),
 ):
+    verify_admin(user_id=user_id, db=db)
+    
     offer = request_schemas.OfferShort(
         fixture_id = fixture_id,
         result = result,
@@ -116,16 +115,18 @@ async def publish_offer(
 @router.post(
     '/proposal',
     response_model=response_schemas.Auction,
-    status_code=status.HTTP_201_CREATED
+    status_code=status.HTTP_201_CREATED,
 )
 async def publish_proposal(
     auction_id: str,
     fixture_id: int,
     result: str,
     quantity: int,
+    user_id: str,
     db: Session = Depends(get_db),
-    token: None = Depends(verify_post_token),
 ):
+    verify_admin(user_id=user_id, db=db)
+    
     proposal = request_schemas.ProposalShort(
         auction_id = auction_id,
         fixture_id = fixture_id,
@@ -141,11 +142,11 @@ async def publish_proposal(
     status_code=status.HTTP_201_CREATED
 )
 async def accept_proposal(
-    proposal_id: str,
+    request: request_schemas.ProposalRequest,
     db: Session = Depends(get_db),
-    token: None = Depends(verify_post_token),
 ):
-    proposal = crud.get_proposal(db, proposal_id)
+    verify_admin(user_id=request.user_id, db=db)
+    proposal = crud.get_proposal(db, request.proposal_id)
 
     return publish.create_acceptance(db, proposal)
 
@@ -156,10 +157,13 @@ async def accept_proposal(
     status_code=status.HTTP_201_CREATED
 )
 async def reject_proposal(
-    proposal_id: str,
+    request: request_schemas.ProposalRequest,
     db: Session = Depends(get_db),
-    token: None = Depends(verify_post_token),
 ):
-    proposal = crud.get_proposal(db, proposal_id)
+    verify_admin(user_id=request.user_id, db=db)
+    proposal = crud.get_proposal(db, request.proposal_id)
+    
+    if not proposal:
+        raise HTTPException(status_code=404, detail="Proposal not found")
 
     return publish.create_rejection(db, proposal)

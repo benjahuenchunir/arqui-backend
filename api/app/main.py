@@ -9,7 +9,7 @@ if os.getenv("ENV") != "production":
 
     load_dotenv()
 
-from fastapi import FastAPI, WebSocket
+from fastapi import FastAPI
 from fastapi.responses import FileResponse, RedirectResponse
 
 from db import models
@@ -42,14 +42,6 @@ app.include_router(requestRouter.router)
 app.include_router(fixtures.router)
 app.include_router(tests.router)
 app.include_router(auctions.router)
-
-@app.websocket("/ws")
-async def websocket_endpoint(websocket: WebSocket):
-    await websocket.accept()
-    while True:
-        data = await websocket.receive_text()
-        await websocket.send_text(f"Message text was: {data}")
-
 
 @app.get("/favicon.ico", include_in_schema=False)
 def favicon():

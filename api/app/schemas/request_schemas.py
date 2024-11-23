@@ -122,6 +122,7 @@ class RequestValidation(BaseModel):
 class User(BaseModel):
     uid: str
     email: str
+    admin: bool
 
     class Config:
         from_attributes = True
@@ -211,3 +212,9 @@ class Auction(BaseModel):
 
     class Config:
         from_attributes = True
+
+# Auctions
+
+class ProposalRequest(BaseModel):
+    proposal_id: str
+    user_id: str

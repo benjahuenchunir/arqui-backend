@@ -467,6 +467,7 @@ def create_user(db: Session, user: request_schemas.User):
     db_user = models.UserModel(
         id=user.uid,
         email=user.email,
+        admin=user.admin,
     )
     db.add(db_user)
     db.commit()
@@ -662,3 +663,6 @@ def get_proposal(db: Session, proposal_id: str):
 
 def get_offer_proposals(db: Session, offer_id: str):
     return db.query(models.ProposalModel).filter(models.ProposalModel.auction_id == offer_id).all()
+
+def get_current_user(db: Session, user_id: str):
+    return db.query(models.UserModel).filter(models.UserModel.id == user_id).one_or_none()
