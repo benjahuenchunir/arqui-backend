@@ -9,7 +9,7 @@ if os.getenv("ENV") != "production":
 
     load_dotenv()
 
-from fastapi import FastAPI, WebSocket
+from fastapi import FastAPI
 from fastapi.responses import FileResponse, RedirectResponse
 
 from db import models
@@ -17,7 +17,7 @@ from db.database import engine
 
 from .routers import fixtures
 from .routers import requests as requestRouter
-from .routers import tests, users
+from .routers import tests, users, auctions
 
 PATH_FIXTURES = os.getenv("PATH_FIXTURES")
 
@@ -41,14 +41,7 @@ app.include_router(users.router)
 app.include_router(requestRouter.router)
 app.include_router(fixtures.router)
 app.include_router(tests.router)
-
-@app.websocket("/ws")
-async def websocket_endpoint(websocket: WebSocket):
-    await websocket.accept()
-    while True:
-        data = await websocket.receive_text()
-        await websocket.send_text(f"Message text was: {data}")
-
+app.include_router(auctions.router)
 
 @app.get("/favicon.ico", include_in_schema=False)
 def favicon():
