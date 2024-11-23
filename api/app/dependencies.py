@@ -1,17 +1,15 @@
 import os
 
-from fastapi import HTTPException, Request
+from app import crud
+from app.schemas import request_schemas
+from fastapi import Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 
 from db.database import get_db
 
-from . import crud
-from .schemas import request_schemas
-
-from fastapi import Depends
-
 POST_TOKEN = os.getenv("POST_TOKEN")
 BET_PRICE = os.getenv("BET_PRICE")
+
 
 def verify_post_token(request: Request):
     """Verify the POST token."""
@@ -79,6 +77,7 @@ def get_deposit_token(request: Request) -> str:
     if not token:
         token = ""
     return token
+
 
 def verify_admin(user_id: str, db: Session = Depends(get_db)):
     user = crud.get_current_user(db, user_id)

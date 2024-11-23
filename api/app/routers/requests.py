@@ -4,23 +4,28 @@
 
 import asyncio
 import os
-import sys
-from typing import List
-
-import transbank.error.transbank_error as transbank_error
-from fastapi import APIRouter, Depends, HTTPException, status, WebSocket, WebSocketDisconnect
-from sqlalchemy.orm import Session
-
-from db.database import get_db
-
-from .. import crud, publish
-from ..dependencies import check_backend_bets  # ? But why tho?
-from ..dependencies import check_balance, check_bets, get_location, verify_post_token
-from ..schemas import request_schemas, response_schemas
-from ..transbank_transaction import webpay_plus_transaction
 import smtplib
+import sys
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+
+from app import crud, publish
+from app.dependencies import check_backend_bets  # ? But why tho?
+from app.dependencies import check_balance, check_bets, get_location, verify_post_token
+from app.schemas import request_schemas, response_schemas
+from app.transbank_transaction import webpay_plus_transaction
+from fastapi import (
+    APIRouter,
+    Depends,
+    HTTPException,
+    WebSocket,
+    WebSocketDisconnect,
+    status,
+)
+from sqlalchemy.orm import Session
+from transbank.error import transbank_error
+
+from db.database import get_db
 
 PATH_REQUESTS = os.getenv("PATH_REQUESTS")
 if not PATH_REQUESTS:
@@ -44,7 +49,7 @@ if not SESSION_ID:
 if not TRANSBANK_REDIRECT_URL:
     print("TRANSBANK_REDIRECT_URL environment variable not set")
     sys.exit(1)
-    
+
 EMAIL = os.getenv("EMAIL")
 EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD")
 
@@ -69,6 +74,7 @@ router = APIRouter(
 
 connected_clients = []
 
+
 # GET /requests/{user_id}
 @router.websocket("/{user_id}")
 async def get_requests(
@@ -79,16 +85,17 @@ async def get_requests(
     """Get requests."""
     await websocket.accept()
     connected_clients.append((websocket, user_id))
-    
+
     requests = crud.get_requests(db, user_id)
     await websocket.send_json([request.dict() for request in requests])
-    
+
     try:
         while True:
             await websocket.receive_text()  # Keep the connection open
     except WebSocketDisconnect:
         connected_clients.remove((websocket, user_id))
         print("Disconnected clients: ", len(connected_clients))
+
 
 def notify_clients(user_id: str, requests):
     if user_id is None:
@@ -97,7 +104,10 @@ def notify_clients(user_id: str, requests):
     for websocket, uid in connected_clients:
         if uid.strip() == user_id.strip():
             print("Sending message", requests)
-            asyncio.create_task(websocket.send_json([request.dict() for request in requests]))
+            asyncio.create_task(
+                websocket.send_json([request.dict() for request in requests])
+            )
+
 
 # POST /requests/webpay
 @router.post(
@@ -199,26 +209,28 @@ async def commit_transaction(
             valid=valid,
         ),
     )
-    
-    user = crud.get_user(db, transaction.user_id) # type: ignore
+
+    user = crud.get_user(db, transaction.user_id)  # type: ignore
     if user is None:
         raise HTTPException(status_code=404, detail="User not found")
-    
+
     message = MIMEMultipart()
-    message["From"] = EMAIL # type: ignore
-    message["To"] = user.email # type: ignore
+    message["From"] = EMAIL  # type: ignore
+    message["To"] = user.email  # type: ignore
     message["Subject"] = "Compra confirmada"
-    body = f"¡Hola! Tu compra ha sido confirmada. ¡Gracias por tu apuesta! \n\n" \
-              f"Fixture: {transaction.fixture_id} \n" \
-                f"Cantidad: {transaction.quantity} \n" \
-                f"Total: {transaction.quantity * BET_PRICE} \n\n" \
-                f"¡Buena suerte!"
+    body = (
+        f"¡Hola! Tu compra ha sido confirmada. ¡Gracias por tu apuesta! \n\n"
+        f"Fixture: {transaction.fixture_id} \n"
+        f"Cantidad: {transaction.quantity} \n"
+        f"Total: {transaction.quantity * BET_PRICE} \n\n"
+        f"¡Buena suerte!"
+    )
     message.attach(MIMEText(body, "plain"))
 
     try:
         with smtplib.SMTP("smtp.gmail.com", 587) as server:
             server.starttls()
-            server.login(EMAIL, EMAIL_PASSWORD) # type: ignore
+            server.login(EMAIL, EMAIL_PASSWORD)  # type: ignore
             server.send_message(message)
         print("Email sent successfully!")
     except Exception as e:
