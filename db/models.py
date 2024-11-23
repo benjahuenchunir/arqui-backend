@@ -208,7 +208,7 @@ class OfferModel(Base):
     __tablename__ = "offers"
 
     id = Column(String, primary_key=True, index=True)
-    fixture_id = Column(Integer)
+    fixture_id = Column(Integer, ForeignKey("fixtures.id"))
     league_name = Column(String(255))
     round = Column(String(255))
     result = Column(String(255))
@@ -223,8 +223,8 @@ class ProposalModel(Base):
     __tablename__ = "proposals"
 
     id = Column(String, primary_key=True, index=True)
-    auction_id = Column(String)
-    fixture_id = Column(Integer)
+    auction_id = Column(String, ForeignKey("offers.id"))
+    fixture_id = Column(Integer, ForeignKey("fixtures.id"))
     league_name = Column(String(255))
     round = Column(String(255))
     result = Column(String(255))

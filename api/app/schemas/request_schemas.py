@@ -155,13 +155,48 @@ class UserInfo(BaseModel):
     user_id: str
 
 class OfferShort(BaseModel):
-    auction_id: Union[str,UUID]
     fixture_id: int
     result: str
     quantity: int
 
     class Config:
         from_atributes = True
+
+class Offer(BaseModel):
+    offer_id: UUID
+    fixture_id: int
+    league_name: str
+    round: str
+    result: str
+    quantity: int
+    group_id: Union[int,str]
+    status: str
+
+    class Config:
+        from_attributes = True
+
+class ProposalShort(BaseModel):
+    auction_id: Union[str, UUID]
+    fixture_id: int
+    result: str
+    quantity: int
+
+    class Config:
+        from_attributes = True
+
+class Proposal(BaseModel):
+    proposal_id: UUID
+    auction_id: Union[str, UUID]
+    fixture_id: int
+    league_name: str
+    round: str
+    result: str
+    quantity: int
+    group_id: Union[int,str]
+    status: str
+
+    class Config:
+        from_attributes = True
 
 class Auction(BaseModel):
     auction_id: UUID
@@ -173,3 +208,6 @@ class Auction(BaseModel):
     quantity: int
     group_id: Union[int,str]
     type: str
+
+    class Config:
+        from_attributes = True
