@@ -17,10 +17,7 @@ parent2_path = os.path.dirname(parent_path)
 sys.path.append(parent2_path)
 
 BET_LIMMIT = os.getenv("BET_LIMMIT")
-try:
-    BET_LIMMIT = int(BET_LIMMIT)
-except:
-    BET_LIMMIT = 40
+BET_LIMMIT = int(BET_LIMMIT) if BET_LIMMIT else 40
 
 
 class FixtureModel(Base):
@@ -41,6 +38,9 @@ class FixtureModel(Base):
     id_away_team = Column(Integer, ForeignKey("teams.id"))
 
     remaining_bets = Column(Integer, default=BET_LIMMIT)
+    reserved_home = Column(Integer, default=0)
+    reserved_away = Column(Integer, default=0)
+    reserved_draw = Column(Integer, default=0)
 
     league = relationship("LeagueModel", back_populates="fixtures")
     odds = relationship(
@@ -202,6 +202,7 @@ class TransactionModel(Base):
     quantity = Column(Integer)
     status = Column(String(255), default="pending")
     wallet = Column(Boolean, default=False)
+
 
 class OfferModel(Base):
     """Base class for offers"""
