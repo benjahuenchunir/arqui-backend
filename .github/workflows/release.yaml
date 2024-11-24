@@ -1,9 +1,12 @@
-name: Semantic Release
+name: Release
 
 on:
   push:
     branches:
       - main
+    paths-ignore:
+      - 'docs/**'
+      - 'terraform/**'
 
 permissions:
   id-token: write
@@ -15,7 +18,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
       - name: Semantic Release
+        id: semantic_release
         uses: cycjimmy/semantic-release-action@v4
         env:
-          GH_TOKEN: ${{ secrets.GIT_TOKEN }}
+            GH_TOKEN: ${{ secrets.GIT_TOKEN }}
