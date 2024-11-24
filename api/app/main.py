@@ -4,20 +4,20 @@
 
 import os
 
-if os.getenv("ENV") != "production":
-    from dotenv import load_dotenv
-
-    load_dotenv()
-
+from app.routers import auctions, fixtures
+from app.routers import requests as requestRouter
+from app.routers import tests, users
 from fastapi import FastAPI
 from fastapi.responses import FileResponse, RedirectResponse
 
 from db import models
 from db.database import engine
 
-from .routers import fixtures
-from .routers import requests as requestRouter
-from .routers import tests, users, auctions
+if os.getenv("ENV") != "production":
+    from dotenv import load_dotenv
+
+    load_dotenv()
+
 
 PATH_FIXTURES = os.getenv("PATH_FIXTURES")
 
@@ -42,6 +42,7 @@ app.include_router(requestRouter.router)
 app.include_router(fixtures.router)
 app.include_router(tests.router)
 app.include_router(auctions.router)
+
 
 @app.get("/favicon.ico", include_in_schema=False)
 def favicon():

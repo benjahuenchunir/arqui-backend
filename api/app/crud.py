@@ -10,18 +10,16 @@ from datetime import datetime
 from typing import Optional
 
 import requests
+from app.lambda_client import invocar_generar_boleta
+from app.routers.requests import notify_clients
+from app.schemas import request_schemas
+from app.schemas.response_schemas import RequestShort
+from sqlalchemy import desc
 from sqlalchemy.exc import SAWarning
 from sqlalchemy.orm import Session, aliased
 from sqlalchemy.sql import func
 
 from db import models
-
-from .schemas import request_schemas
-from .lambda_client import invocar_generar_boleta
-from .routers.requests import notify_clients
-
-from .schemas.response_schemas import RequestShort
-from sqlalchemy import desc
 
 warnings.filterwarnings("ignore", category=SAWarning)
 
@@ -250,6 +248,56 @@ def get_fixture_by_id(db: Session, fixture_id: int):
     )
 
 
+def reserve_request(
+    db: Session,
+    request: request_schemas.RequestShort,
+    bets: str,
+):
+    """Create a request via reserved bets. (no validation needed)"""
+
+    db_fixture = get_fixture_by_id(db, request.fixture_id)
+
+    if db_fixture is None:
+        return None
+
+    db_request = models.RequestModel(
+        request_id=str(uuid.uuid4()),
+        group_id=2,
+        fixture_id=request.fixture_id,
+        league_name=db_fixture.league.name,
+        round=db_fixture.league.round,
+        date=datetime.now(),
+        result=request.result,
+        datetime=str(datetime.timestamp(datetime.now())),
+        quantity=request.quantity,
+        wallet=True,
+        seller=0,
+        status=models.RequestStatusEnum.APPROVED,
+        user_id=request.uid,
+    )
+    db.add(db_request)
+
+    match bets:
+        case "Home":
+            db_fixture.reserved_home -= request.quantity  # type: ignore
+        case "Away":
+            db_fixture.reserved_away -= request.quantity  # type: ignore
+        case "Draw":
+            db_fixture.reserved_draw -= request.quantity  # type: ignore
+        case _:
+            return None
+
+    db.commit()
+    db.refresh(db_fixture)
+
+    # Notify connected clients
+    print("User id in upsert is ", str(db_request.user_id))
+    db_requests = get_requests(db, str(db_request.user_id))
+    notify_clients(str(db_request.user_id), db_requests)
+
+    return db_request
+
+
 def upsert_request(
     db: Session,
     request: request_schemas.Request,
@@ -281,26 +329,24 @@ def upsert_request(
 
     db_fixture.remaining_bets -= request.quantity  # type: ignore
 
-    # if request.group_id == group_id and user_id:
-    #     db_user = db.query(models.UserModel).filter_by(id=user_id).one_or_none()
-    #     if db_user:
-    #         db_request.user = db_user
-    #         update_balance(
-    #             db, db_request.user.id, db_request.quantity * BET_PRICE, add=False
-    #         )
-
-    # db_request.fixture = db_fixture
-    # db_fixture.remaining_bets -= request.quantity
+    if request.seller == 2:
+        match request.result:
+            case db_fixture.home_team.team.name:
+                db_fixture.reserved_home += request.quantity  # type: ignore
+            case db_fixture.away_team.team.name:
+                db_fixture.reserved_away += request.quantity  # type: ignore
+            case _:
+                db_fixture.reserved_draw += request.quantity  # type: ignore
 
     db.commit()
     db.refresh(db_fixture)
     db.refresh(db_request)
-    
+
     # Notify connected clients
-    print("User id in upsert is ", db_request.user_id)
-    requests = get_requests(db, db_request.user_id)
-    notify_clients(db_request.user_id, requests)
-    
+    print("User id in upsert is ", str(db_request.user_id))
+    db_requests = get_requests(db, str(db_request.user_id))
+    notify_clients(str(db_request.user_id), db_requests)
+
     return db_request
 
 
@@ -341,41 +387,47 @@ async def update_request(
 
     db.commit()
     db.refresh(db_request)
-    
+
     # Notify connected clients
     print("User id in update is ", db_request.user_id)
     requests = get_requests(db, db_request.user_id)
     notify_clients(db_request.user_id, requests)
-    
+
     return db_request
+
 
 async def generate_ticket(db: Session, request_id: str):
     await asyncio.sleep(10)
     try:
         db_request = (
-        db.query(models.RequestModel).filter_by(request_id=request_id).one_or_none()
+            db.query(models.RequestModel).filter_by(request_id=request_id).one_or_none()
         )
         if db_request is None:
             return None
-        
-        db_user = db.query(models.UserModel).filter_by(id=db_request.user_id).one_or_none()
+
+        db_user = (
+            db.query(models.UserModel).filter_by(id=db_request.user_id).one_or_none()
+        )
 
         if db_user is None:
             return None
-    
+
         url = invocar_generar_boleta(
             {
                 "grupo": GROUP_ID,
                 "usuario": db_user.email,
-                "equipos": db_request.fixture.home_team.team.name + " vs " + db_request.fixture.away_team.team.name,
+                "equipos": db_request.fixture.home_team.team.name
+                + " vs "
+                + db_request.fixture.away_team.team.name,
             }
-            )
+        )
         print(url)
         db_request.url_boleta = url
         db.commit()
         db.refresh(db_request)
     except Exception as e:
         print("ERROR generando boleta", e)
+
 
 async def assign_job(db: Session, request_id: str):
     """Assign a job to a user."""
@@ -447,12 +499,12 @@ async def link_request(db: Session, link: request_schemas.Link):
 
     db.commit()
     db.refresh(db_request)
-    
+
     # Notify connected clients
     print("User id in link is ", db_request.user_id)
     requests = get_requests(db, db_request.user_id)
     notify_clients(db_request.user_id, requests)
-    
+
     return db_request
 
 
@@ -482,7 +534,12 @@ def get_user(db: Session, user_id: str):
 
 def get_requests(db: Session, user_id: str):
     """Get requests by user ID, sorted by datetime."""
-    requests = db.query(models.RequestModel).filter_by(user_id=user_id).order_by(desc(models.RequestModel.datetime)).all()
+    requests = (
+        db.query(models.RequestModel)
+        .filter_by(user_id=user_id)
+        .order_by(desc(models.RequestModel.datetime))
+        .all()
+    )
     return [RequestShort.model_validate(request) for request in requests]
 
 
@@ -592,38 +649,41 @@ def get_recommendations(db: Session, ids: list):
     """Get recommended fixtures."""
     return db.query(models.FixtureModel).filter(models.FixtureModel.id.in_(ids)).all()
 
+
 def upsert_offer(db: Session, offer: request_schemas.Auction):
-    
+
     db_offer = models.OfferModel(
         id=offer.id,
-        fixture_id = offer.fixture_id,
-        league_name = offer.league_name,
-        round = offer.round,
-        result = offer.result,
-        quantity = offer.quantity,
-        group_id = offer.group_id,
+        fixture_id=offer.fixture_id,
+        league_name=offer.league_name,
+        round=offer.round,
+        result=offer.result,
+        quantity=offer.quantity,
+        group_id=offer.group_id,
     )
 
     db.add(db_offer)
     db.commit()
     return db_offer
 
+
 def upsert_proposal(db: Session, proposal: request_schemas.Auction):
-    
+
     db_proposal = models.ProposalModel(
         id=proposal.id,
-        auction_id = proposal.auction_id,
-        fixture_id = proposal.fixture_id,
-        league_name = proposal.league_name,
-        round = proposal.round,
-        result = proposal.result,
-        quantity = proposal.quantity,
-        group_id = proposal.group_id,
+        auction_id=proposal.auction_id,
+        fixture_id=proposal.fixture_id,
+        league_name=proposal.league_name,
+        round=proposal.round,
+        result=proposal.result,
+        quantity=proposal.quantity,
+        group_id=proposal.group_id,
     )
 
     db.add(db_proposal)
     db.commit()
     return db_proposal
+
 
 def update_offer(db: Session, offer_id: str, offer: request_schemas.Offer):
     db_offer = (
@@ -640,6 +700,7 @@ def update_offer(db: Session, offer_id: str, offer: request_schemas.Offer):
     db.refresh(db_offer)
     return db_offer
 
+
 def update_proposal(db: Session, proposal_id: str, proposal: request_schemas.Proposal):
     db_proposal = (
         db.query(models.ProposalModel)
@@ -655,14 +716,32 @@ def update_proposal(db: Session, proposal_id: str, proposal: request_schemas.Pro
     db.refresh(db_proposal)
     return db_proposal
 
+
 def get_offer(db: Session, offer_id: str):
-    return db.query(models.OfferModel).filter(models.OfferModel.id == offer_id).one_or_none()
+    return (
+        db.query(models.OfferModel)
+        .filter(models.OfferModel.id == offer_id)
+        .one_or_none()
+    )
+
 
 def get_proposal(db: Session, proposal_id: str):
-    return db.query(models.ProposalModel).filter(models.ProposalModel.id == proposal_id).one_or_none()
+    return (
+        db.query(models.ProposalModel)
+        .filter(models.ProposalModel.id == proposal_id)
+        .one_or_none()
+    )
+
 
 def get_offer_proposals(db: Session, offer_id: str):
-    return db.query(models.ProposalModel).filter(models.ProposalModel.auction_id == offer_id).all()
+    return (
+        db.query(models.ProposalModel)
+        .filter(models.ProposalModel.auction_id == offer_id)
+        .all()
+    )
+
 
 def get_current_user(db: Session, user_id: str):
-    return db.query(models.UserModel).filter(models.UserModel.id == user_id).one_or_none()
+    return (
+        db.query(models.UserModel).filter(models.UserModel.id == user_id).one_or_none()
+    )
