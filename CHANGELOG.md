@@ -1,3 +1,10 @@
+## [1.1.1](https://github.com/benjahuenchunir/arqui-backend/compare/v1.1.0...v1.1.1) (2024-11-24)
+
+
+### Bug Fixes
+
+* use correct tag name ([543f4cf](https://github.com/benjahuenchunir/arqui-backend/commit/543f4cf7423d389ee226dc9a980a282908d69ffb))
+
 # [1.1.0](https://github.com/benjahuenchunir/arqui-backend/compare/v1.0.3...v1.1.0) (2024-11-24)
 
 
