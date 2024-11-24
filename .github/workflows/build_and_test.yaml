@@ -68,7 +68,7 @@ jobs:
         ENV: production
 
     - name: Check Listener Logs
-      run: docker-compose logs arquisis-listener | grep "Connected to Broker with result code" || exit 1
+      run: docker-compose -f compose.dev.yaml logs arquisis-listener | grep "Connected to Broker with result code" || exit 1
 
     - name: Stop containers
       run: docker-compose down
