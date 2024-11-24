@@ -8,7 +8,7 @@ import sys
 from typing import List
 
 import transbank.error.transbank_error as transbank_error
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, WebSocket, WebSocketDisconnect
 from sqlalchemy.orm import Session
 
 from db.database import get_db
@@ -67,20 +67,37 @@ router = APIRouter(
 #                   REQUESTS - FRONTEND                        #
 ################################################################
 
+connected_clients = []
 
 # GET /requests/{user_id}
-@router.get(
-    "/{user_id}",
-    response_model=List[response_schemas.RequestShort],
-    status_code=status.HTTP_200_OK,
-)
-def get_requests(
+@router.websocket("/{user_id}")
+async def get_requests(
+    websocket: WebSocket,
     user_id: str,
     db: Session = Depends(get_db),
 ):
     """Get requests."""
-    return crud.get_requests(db, user_id)
+    await websocket.accept()
+    connected_clients.append((websocket, user_id))
+    
+    requests = crud.get_requests(db, user_id)
+    await websocket.send_json([request.dict() for request in requests])
+    
+    try:
+        while True:
+            await websocket.receive_text()  # Keep the connection open
+    except WebSocketDisconnect:
+        connected_clients.remove((websocket, user_id))
+        print("Disconnected clients: ", len(connected_clients))
 
+def notify_clients(user_id: str, requests):
+    if user_id is None:
+        return
+    print(f"Notifying {len(connected_clients)} clients")
+    for websocket, uid in connected_clients:
+        if uid.strip() == user_id.strip():
+            print("Sending message", requests)
+            asyncio.create_task(websocket.send_json([request.dict() for request in requests]))
 
 # POST /requests/webpay
 @router.post(

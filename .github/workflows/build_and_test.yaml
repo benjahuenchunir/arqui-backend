@@ -8,6 +8,7 @@ on:
       - 'docs/**'
       - 'generar_boleta/**'
       - '.github/workflows/test_and_deploy_serverless.yaml'
+      - 'terraform/**'
 
 jobs:
   build-and-test:

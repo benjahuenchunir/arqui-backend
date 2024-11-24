@@ -30,6 +30,7 @@ services:
       POST_TOKEN: ${POST_TOKEN}
       PATH_FIXTURES: ${PATH_FIXTURES}
       PATH_REQUESTS: ${PATH_REQUESTS}
+      PATH_AUCTIONS: ${PATH_AUCTIONS}
 
       PUBLISHER_HOST: arquisis-publisher
       PUBLISHER_PORT: 7999
@@ -70,6 +71,7 @@ services:
 
       PATH_FIXTURES: ${PATH_FIXTURES}
       PATH_REQUESTS: ${PATH_REQUESTS}
+      PATH_AUCTIONS: ${PATH_AUCTIONS}
       POST_TOKEN: ${POST_TOKEN}
       API_HOST: arquisis-api
       API_PORT: 8000

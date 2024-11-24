@@ -18,6 +18,10 @@ from db import models
 
 from .schemas import request_schemas
 from .lambda_client import invocar_generar_boleta
+from .routers.requests import notify_clients
+
+from .schemas.response_schemas import RequestShort
+from sqlalchemy import desc
 
 warnings.filterwarnings("ignore", category=SAWarning)
 
@@ -291,6 +295,12 @@ def upsert_request(
     db.commit()
     db.refresh(db_fixture)
     db.refresh(db_request)
+    
+    # Notify connected clients
+    print("User id in upsert is ", db_request.user_id)
+    requests = get_requests(db, db_request.user_id)
+    notify_clients(db_request.user_id, requests)
+    
     return db_request
 
 
@@ -331,6 +341,12 @@ async def update_request(
 
     db.commit()
     db.refresh(db_request)
+    
+    # Notify connected clients
+    print("User id in update is ", db_request.user_id)
+    requests = get_requests(db, db_request.user_id)
+    notify_clients(db_request.user_id, requests)
+    
     return db_request
 
 async def generate_ticket(db: Session, request_id: str):
@@ -431,6 +447,12 @@ async def link_request(db: Session, link: request_schemas.Link):
 
     db.commit()
     db.refresh(db_request)
+    
+    # Notify connected clients
+    print("User id in link is ", db_request.user_id)
+    requests = get_requests(db, db_request.user_id)
+    notify_clients(db_request.user_id, requests)
+    
     return db_request
 
 
@@ -445,6 +467,7 @@ def create_user(db: Session, user: request_schemas.User):
     db_user = models.UserModel(
         id=user.uid,
         email=user.email,
+        admin=user.admin,
     )
     db.add(db_user)
     db.commit()
@@ -458,8 +481,9 @@ def get_user(db: Session, user_id: str):
 
 
 def get_requests(db: Session, user_id: str):
-    """Get requests by user ID."""
-    return db.query(models.RequestModel).filter_by(user_id=user_id).all()
+    """Get requests by user ID, sorted by datetime."""
+    requests = db.query(models.RequestModel).filter_by(user_id=user_id).order_by(desc(models.RequestModel.datetime)).all()
+    return [RequestShort.model_validate(request) for request in requests]
 
 
 def update_balance(db: Session, user_id: str, amount: float, add: bool = True):
@@ -567,3 +591,78 @@ def get_transaction(db: Session, token: str):
 def get_recommendations(db: Session, ids: list):
     """Get recommended fixtures."""
     return db.query(models.FixtureModel).filter(models.FixtureModel.id.in_(ids)).all()
+
+def upsert_offer(db: Session, offer: request_schemas.Auction):
+    
+    db_offer = models.OfferModel(
+        id=offer.id,
+        fixture_id = offer.fixture_id,
+        league_name = offer.league_name,
+        round = offer.round,
+        result = offer.result,
+        quantity = offer.quantity,
+        group_id = offer.group_id,
+    )
+
+    db.add(db_offer)
+    db.commit()
+    return db_offer
+
+def upsert_proposal(db: Session, proposal: request_schemas.Auction):
+    
+    db_proposal = models.ProposalModel(
+        id=proposal.id,
+        auction_id = proposal.auction_id,
+        fixture_id = proposal.fixture_id,
+        league_name = proposal.league_name,
+        round = proposal.round,
+        result = proposal.result,
+        quantity = proposal.quantity,
+        group_id = proposal.group_id,
+    )
+
+    db.add(db_proposal)
+    db.commit()
+    return db_proposal
+
+def update_offer(db: Session, offer_id: str, offer: request_schemas.Offer):
+    db_offer = (
+        db.query(models.OfferModel)
+        .filter(models.OfferModel.id == offer_id)
+        .one_or_none()
+    )
+    if db_offer is None:
+        return None
+
+    db_offer.status = offer.status
+
+    db.commit()
+    db.refresh(db_offer)
+    return db_offer
+
+def update_proposal(db: Session, proposal_id: str, proposal: request_schemas.Proposal):
+    db_proposal = (
+        db.query(models.ProposalModel)
+        .filter(models.ProposalModel.id == proposal_id)
+        .one_or_none()
+    )
+    if db_proposal is None:
+        return None
+
+    db_proposal.status = proposal.status
+
+    db.commit()
+    db.refresh(db_proposal)
+    return db_proposal
+
+def get_offer(db: Session, offer_id: str):
+    return db.query(models.OfferModel).filter(models.OfferModel.id == offer_id).one_or_none()
+
+def get_proposal(db: Session, proposal_id: str):
+    return db.query(models.ProposalModel).filter(models.ProposalModel.id == proposal_id).one_or_none()
+
+def get_offer_proposals(db: Session, offer_id: str):
+    return db.query(models.ProposalModel).filter(models.ProposalModel.auction_id == offer_id).all()
+
+def get_current_user(db: Session, user_id: str):
+    return db.query(models.UserModel).filter(models.UserModel.id == user_id).one_or_none()

@@ -103,3 +103,25 @@ async def publish_validation(
         return JSONResponse(
             status_code=500, content={"message": "Failed to publish message"}
         )
+
+@app.post("/auction")
+async def publish_auction(
+    request: Msg,
+    status_code = status.HTTP_200_OK,
+    token: None = Depends(verify_post_token),
+):
+    """Publish an auction to the MQTT broker"""
+    message = request.payload
+    try:
+        publish.single(
+            "fixtures/auction",
+            payload=message,
+            hostname=HOST,  # type: ignore
+            port=PORT,  # type: ignore
+            auth={"username": USER, "password": PASS},  # type: ignore
+        )
+    except Exception as e:
+        logging.error(f"Failed to publish message: {e}")
+        return JSONResponse(
+            status_code=500, content={"message": "Failed to publish message"}
+        )
