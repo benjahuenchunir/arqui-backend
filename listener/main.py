@@ -15,7 +15,7 @@ import sys
 import paho.mqtt.client as mqtt
 import paho.mqtt.enums as mqtt_enums
 import paho.mqtt.subscribe as subscribe
-from callbacks import on_history, on_info, on_requests, on_validation
+from callbacks import on_history, on_info, on_requests, on_validation, on_auction
 
 logging.basicConfig(level=logging.INFO)
 
@@ -44,6 +44,7 @@ TOPICS = {
     "fixtures/history": on_history,
     "fixtures/validation": on_validation,
     "fixtures/requests": on_requests,
+    "fixtures/auctions": on_auction,
 }
 
 

@@ -17,7 +17,7 @@ from db.database import engine
 
 from .routers import fixtures
 from .routers import requests as requestRouter
-from .routers import tests, users
+from .routers import tests, users, auctions
 
 PATH_FIXTURES = os.getenv("PATH_FIXTURES")
 
@@ -41,7 +41,7 @@ app.include_router(users.router)
 app.include_router(requestRouter.router)
 app.include_router(fixtures.router)
 app.include_router(tests.router)
-
+app.include_router(auctions.router)
 
 @app.get("/favicon.ico", include_in_schema=False)
 def favicon():

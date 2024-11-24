@@ -104,3 +104,115 @@ def publish_validation(request: response_schemas.RequestValidation):
     )
     if response.status_code != 200:
         raise RequestException(response.text)
+
+def create_offer(
+    db: Session,
+    ofr: request_schemas.OfferShort
+):
+    
+    db_fixture = crud.get_fixture_by_id(db, ofr.fixture_id)
+
+    if db_fixture is None:
+        return None
+    
+    offer = response_schemas.Auction(
+        auction_id = uuid.uuid4(),
+        proposal_id = "",
+        fixture_id = ofr.fixture_id,
+        league_name = db_fixture.league.name,
+        round = db_fixture.league.round,
+        result = ofr.result,
+        quantity = ofr.quantity,
+        group_id = GROUP_ID,
+        type = 'offer',
+    )
+
+    publish_auction(offer)
+
+    return offer
+    
+def create_proposal(
+    db: Session,
+    prp: request_schemas.ProposalShort
+):
+    
+    db_fixture = crud.get_fixture_by_id(db, prp.fixture_id)
+
+    if db_fixture is None:
+        return None
+    
+    proposal = response_schemas.Auction(
+        auction_id = prp.auction_id,
+        proposal_id = uuid.uuid4(),
+        fixture_id = prp.fixture_id,
+        league_name = db_fixture.league.name,
+        round = db_fixture.league.round,
+        result = prp.result,
+        quantity = prp.quantity,
+        group_id = GROUP_ID,
+        type = 'proposal',
+    )
+
+    publish_auction(proposal)
+
+    return proposal
+
+def create_acceptance(
+    db: Session,
+    prp: request_schemas.Proposal
+):
+    proposal = response_schemas.Auction(
+        auction_id = uuid.uuid4(),
+        proposal_id = "",
+        fixture_id = prp.fixture_id,
+        league_name = prp.league_name,
+        round = prp.round,
+        result = prp.result,
+        quantity = prp.quantity,
+        group_id = GROUP_ID,
+        type = 'acceptance',
+    )
+
+    publish_auction(proposal)
+
+    return proposal
+
+def create_rejection(
+    db: Session,
+    prp: request_schemas.Proposal
+):
+    proposal = response_schemas.Auction(
+        auction_id = uuid.uuid4(),
+        proposal_id = "",
+        fixture_id = prp.fixture_id,
+        league_name = prp.league_name,
+        round = prp.round,
+        result = prp.result,
+        quantity = prp.quantity,
+        group_id = GROUP_ID,
+        type = 'rejection',
+    )
+
+    publish_auction(proposal)
+
+    return proposal 
+
+def publish_auction(
+        auction: response_schemas.Auction
+):
+    """Publish an auction."""
+    # Publish the auction to the broker
+    url = f"http://{PUBLISHER_HOST}:{PUBLISHER_PORT}/auction"
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {POST_TOKEN}",
+    }
+    response = requests.post(
+        url,
+        json={"payload": auction.model_dump_json()},
+        headers=headers,
+        timeout=30,
+    )
+    if response.status_code != 200:
+        raise RequestException(response.text)
+    

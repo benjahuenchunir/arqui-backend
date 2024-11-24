@@ -11,6 +11,7 @@ POST_TOKEN = os.getenv("POST_TOKEN")
 
 PATH_FIXTURES = os.getenv("PATH_FIXTURES")
 PATH_REQUESTS = os.getenv("PATH_REQUESTS")
+PATH_AUCTIONS = os.getenv("PATH_AUCTIONS")
 
 if not POST_TOKEN:
     logging.error("POST_TOKEN environment variable not set")
@@ -106,3 +107,33 @@ def on_validation(payload):
             logging.error("Failed to post validation: %s", response.text)
     except requests.exceptions.RequestException as e:
         logging.error("Error processing validation: %s", str(e))
+
+def on_auction(payload):
+    """Callback for a message on the auction topic"""
+    try:
+        
+        if payload["type"] == "offer" or payload["type"] == "proposal":
+
+            response = requests.post(
+                f"http://{API_HOST}:{API_PORT}/{PATH_AUCTIONS}",
+                json=payload,
+                headers={"Authorization": f"Bearer {POST_TOKEN}"},
+                timeout=5,
+            )
+            if response.status_code != 200:
+                logging.error("Failed to post auction: %s", response.text)
+
+        elif payload["type"] == "acceptance" or payload["type"] == "rejection":
+
+            response = requests.patch(
+                f"http://{API_HOST}:{API_PORT}/{PATH_AUCTIONS}",
+                json=payload,
+                headers={"Authorization": f"Bearer {POST_TOKEN}"},
+                timeout=5,
+            )
+            if response.status_code != 200:
+                logging.error("Failed to post auction: %s", response.text)
+            
+
+    except requests.exceptions.RequestException as e:
+        logging.error("Error processing auction: %s", str(e))

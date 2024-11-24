@@ -32,6 +32,7 @@ def create_user(user: request_schemas.User, db: Session = Depends(get_db)):
 )
 def get_wallet(uid: str, db: Session = Depends(get_db)):
     """Get the wallet of the user."""
+    print("Uid is ", uid)
     user = crud.get_user(db, uid)
     if user is None:
         raise HTTPException(status_code=404, detail="User not found")
