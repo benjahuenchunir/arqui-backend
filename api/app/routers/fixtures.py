@@ -4,14 +4,13 @@ import sys
 from typing import List, Optional
 
 import requests
+from app import crud
+from app.dependencies import verify_post_token
+from app.schemas import request_schemas, response_schemas
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 
 from db.database import get_db
-
-from .. import crud
-from ..dependencies import verify_post_token
-from ..schemas import request_schemas, response_schemas
 
 PATH_FIXTURES = os.getenv("PATH_FIXTURES")
 
