@@ -1,3 +1,10 @@
+## [1.0.1](https://github.com/benjahuenchunir/arqui-backend/compare/v1.0.0...v1.0.1) (2024-11-24)
+
+
+### Bug Fixes
+
+* add path auctions to CI ([26b6ec7](https://github.com/benjahuenchunir/arqui-backend/commit/26b6ec7d768898dfde83580a910921fef4848039))
+
 # 1.0.0 (2024-11-24)
 
 
