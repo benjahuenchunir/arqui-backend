@@ -1,3 +1,10 @@
+## [1.0.3](https://github.com/benjahuenchunir/arqui-backend/compare/v1.0.2...v1.0.3) (2024-11-24)
+
+
+### Bug Fixes
+
+* specify compose file for stopping containers in CI ([f0857f8](https://github.com/benjahuenchunir/arqui-backend/commit/f0857f8e9a6c5f5e50808b091d0ba7529b5b2ac5))
+
 ## [1.0.2](https://github.com/benjahuenchunir/arqui-backend/compare/v1.0.1...v1.0.2) (2024-11-24)
 
 
