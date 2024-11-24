@@ -155,6 +155,7 @@ class CommitTransaction(BaseModel):
 class UserInfo(BaseModel):
     user_id: str
 
+
 class OfferShort(BaseModel):
     fixture_id: int
     result: str
@@ -163,6 +164,7 @@ class OfferShort(BaseModel):
     class Config:
         from_atributes = True
 
+
 class Offer(BaseModel):
     offer_id: UUID
     fixture_id: int
@@ -170,11 +172,12 @@ class Offer(BaseModel):
     round: str
     result: str
     quantity: int
-    group_id: Union[int,str]
+    group_id: Union[int, str]
     status: str
 
     class Config:
         from_attributes = True
+
 
 class ProposalShort(BaseModel):
     auction_id: Union[str, UUID]
@@ -185,6 +188,7 @@ class ProposalShort(BaseModel):
     class Config:
         from_attributes = True
 
+
 class Proposal(BaseModel):
     proposal_id: UUID
     auction_id: Union[str, UUID]
@@ -193,11 +197,12 @@ class Proposal(BaseModel):
     round: str
     result: str
     quantity: int
-    group_id: Union[int,str]
+    group_id: Union[int, str]
     status: str
 
     class Config:
         from_attributes = True
+
 
 class Auction(BaseModel):
     auction_id: UUID
@@ -207,13 +212,15 @@ class Auction(BaseModel):
     round: str
     result: str
     quantity: int
-    group_id: Union[int,str]
+    group_id: Union[int, str]
     type: str
 
     class Config:
         from_attributes = True
 
+
 # Auctions
+
 
 class ProposalRequest(BaseModel):
     proposal_id: str

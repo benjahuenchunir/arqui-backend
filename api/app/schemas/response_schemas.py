@@ -76,6 +76,9 @@ class AvailableFixture(BaseModel):
     odds: List[Odd] = []
     league: League
     remaining_bets: Optional[int] = None
+    reserved_home: Optional[int] = None
+    reserved_away: Optional[int] = None
+    reserved_draw: Optional[int] = None
 
     class Config:
         from_attributes = True
@@ -125,6 +128,7 @@ class RequestValidation(BaseModel):
     class Config:
         from_attributes = True
 
+
 class Auction(BaseModel):
     auction_id: UUID
     proposal_id: Union[str, UUID]
@@ -133,5 +137,5 @@ class Auction(BaseModel):
     round: str
     result: str
     quantity: int
-    group_id: Union[int,str]
+    group_id: Union[int, str]
     type: str

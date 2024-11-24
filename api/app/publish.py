@@ -31,6 +31,11 @@ def create_request(
     if db_fixture is None:
         return None
 
+    db_user = crud.get_user(db, req.uid)
+
+    if db_user is None:
+        return None
+
     request = response_schemas.Request(
         request_id=request_id or uuid.uuid4(),  # type: ignore
         group_id=str(GROUP_ID),
@@ -43,7 +48,7 @@ def create_request(
         datetime=datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S UTC"),
         quantity=req.quantity,
         wallet=not bool(deposit_token),
-        seller=0,
+        seller=0 if not bool(db_user.admin) else int(GROUP_ID) if GROUP_ID else 2,
     )
     publish_request(request)
 

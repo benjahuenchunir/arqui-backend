@@ -11,7 +11,13 @@ from email.mime.text import MIMEText
 
 from app import crud, publish
 from app.dependencies import check_backend_bets  # ? But why tho?
-from app.dependencies import check_balance, check_bets, get_location, verify_post_token
+from app.dependencies import (
+    check_balance,
+    check_bets,
+    check_reserved_bets,
+    get_location,
+    verify_post_token,
+)
 from app.schemas import request_schemas, response_schemas
 from app.transbank_transaction import webpay_plus_transaction
 from fastapi import (
@@ -267,6 +273,26 @@ async def start_wallet_flow(
     )
 
     return published_request
+
+
+# POST /requests/reserved
+@router.post(
+    "/reserved",
+    status_code=status.HTTP_201_CREATED,
+)
+async def reserve_request(
+    request: request_schemas.RequestShort,
+    db: Session = Depends(get_db),
+    bets: str = Depends(check_reserved_bets),
+    balance: None = Depends(check_balance),
+):
+    """Buy a reserve a request."""
+    db_request = crud.reserve_request(db, request, bets)
+
+    if db_request is None:
+        raise HTTPException(status_code=404, detail="Fixture not found")
+
+    return db_request
 
 
 ################################################################
