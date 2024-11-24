@@ -83,6 +83,7 @@ resource "aws_iam_instance_profile" "attach" {
 # define a bucket for storing build artifacts
 resource "aws_s3_bucket" "build_artifacts_bucket" {
   bucket = "iic2173-back-terraform"
+  force_destroy = true
 }
 
 resource "aws_s3_bucket_versioning" "build_artifacts_bucket_versioning" {
