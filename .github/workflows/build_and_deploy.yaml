@@ -1,14 +1,8 @@
 name: Build and Deploy
 
 on:
-  push:
-    branches:
-      - main
-    paths-ignore:
-      - 'docs/**'
-      - 'generar_boleta/**'
-      - '.github/workflows/test_and_deploy_serverless.yaml'
-      - 'terraform/**'
+  release:
+    types: [published]
 
 permissions:
   id-token: write
@@ -39,7 +33,7 @@ jobs:
           REGISTRY: ${{ steps.login-ecr-public.outputs.registry }}
           REGISTRY_ALIAS: v0y9v2i3
           REPOSITORY: api
-          IMAGE_TAG: ${{ steps.release.outputs.nextRelease.version }}
+          IMAGE_TAG: ${{ github.event.release.tag_name }}
         run: |
           docker build -t $REGISTRY/$REGISTRY_ALIAS/$REPOSITORY:$IMAGE_TAG -f ./api/Dockerfile .
           docker push $REGISTRY/$REGISTRY_ALIAS/$REPOSITORY:$IMAGE_TAG
@@ -49,7 +43,7 @@ jobs:
           REGISTRY: ${{ steps.login-ecr-public.outputs.registry }}
           REGISTRY_ALIAS: v0y9v2i3
           REPOSITORY: jobs-master
-          IMAGE_TAG: latest
+          IMAGE_TAG: ${{ github.event.release.tag_name }}
         run: |
           docker build -t $REGISTRY/$REGISTRY_ALIAS/$REPOSITORY:$IMAGE_TAG -f ./jobs_master/Dockerfile .
           docker push $REGISTRY/$REGISTRY_ALIAS/$REPOSITORY:$IMAGE_TAG
@@ -59,7 +53,7 @@ jobs:
           REGISTRY: ${{ steps.login-ecr-public.outputs.registry }}
           REGISTRY_ALIAS: v0y9v2i3
           REPOSITORY: listener
-          IMAGE_TAG: latest
+          IMAGE_TAG: ${{ github.event.release.tag_name }}
         run: |
           cd listener
           docker build -t $REGISTRY/$REGISTRY_ALIAS/$REPOSITORY:$IMAGE_TAG .
@@ -70,7 +64,7 @@ jobs:
           REGISTRY: ${{ steps.login-ecr-public.outputs.registry }}
           REGISTRY_ALIAS: v0y9v2i3
           REPOSITORY: publisher
-          IMAGE_TAG: latest
+          IMAGE_TAG: ${{ github.event.release.tag_name }}
         run: |
           cd publisher
           docker build -t $REGISTRY/$REGISTRY_ALIAS/$REPOSITORY:$IMAGE_TAG .
