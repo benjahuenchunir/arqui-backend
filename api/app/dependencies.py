@@ -62,6 +62,28 @@ def check_bets(request: request_schemas.RequestShort):
             raise HTTPException(status_code=403, detail="No more bets allowed")
 
 
+def check_reserved_bets(request: request_schemas.RequestShort):
+    """Check the number of reserved bets."""
+    db: Session = next(get_db())
+    db_fixture = crud.get_fixture_by_id(db, request.fixture_id)
+    if db_fixture:
+        match request.result:
+            case db_fixture.home_team.team.name:
+                if db_fixture.reserved_home < request.quantity:  # type: ignore
+                    raise HTTPException(status_code=403, detail="No more bets allowed")
+                return "Home"
+            case db_fixture.away_team.team.name:
+                if db_fixture.reserved_away < request.quantity:  # type: ignore
+                    raise HTTPException(status_code=403, detail="No more bets allowed")
+                return "Away"
+            case "---":
+                if db_fixture.reserved_draw < request.quantity:  # type: ignore
+                    raise HTTPException(status_code=403, detail="No more bets allowed")
+                return "Draw"
+
+    raise HTTPException(status_code=404, detail="Fixture not found")
+
+
 def check_backend_bets(request: request_schemas.Request):
     """Check the number of bets."""
     db: Session = next(get_db())

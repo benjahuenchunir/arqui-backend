@@ -248,6 +248,56 @@ def get_fixture_by_id(db: Session, fixture_id: int):
     )
 
 
+def reserve_request(
+    db: Session,
+    request: request_schemas.RequestShort,
+    bets: str,
+):
+    """Create a request via reserved bets. (no validation needed)"""
+
+    db_fixture = get_fixture_by_id(db, request.fixture_id)
+
+    if db_fixture is None:
+        return None
+
+    db_request = models.RequestModel(
+        request_id=str(uuid.uuid4()),
+        group_id=2,
+        fixture_id=request.fixture_id,
+        league_name=db_fixture.league.name,
+        round=db_fixture.league.round,
+        date=datetime.now(),
+        result=request.result,
+        datetime=str(datetime.timestamp(datetime.now())),
+        quantity=request.quantity,
+        wallet=True,
+        seller=0,
+        status=models.RequestStatusEnum.APPROVED,
+        user_id=request.uid,
+    )
+    db.add(db_request)
+
+    match bets:
+        case "Home":
+            db_fixture.reserved_home -= request.quantity  # type: ignore
+        case "Away":
+            db_fixture.reserved_away -= request.quantity  # type: ignore
+        case "Draw":
+            db_fixture.reserved_draw -= request.quantity  # type: ignore
+        case _:
+            return None
+
+    db.commit()
+    db.refresh(db_fixture)
+
+    # Notify connected clients
+    print("User id in upsert is ", str(db_request.user_id))
+    db_requests = get_requests(db, str(db_request.user_id))
+    notify_clients(str(db_request.user_id), db_requests)
+
+    return db_request
+
+
 def upsert_request(
     db: Session,
     request: request_schemas.Request,
@@ -279,25 +329,23 @@ def upsert_request(
 
     db_fixture.remaining_bets -= request.quantity  # type: ignore
 
-    # if request.group_id == group_id and user_id:
-    #     db_user = db.query(models.UserModel).filter_by(id=user_id).one_or_none()
-    #     if db_user:
-    #         db_request.user = db_user
-    #         update_balance(
-    #             db, db_request.user.id, db_request.quantity * BET_PRICE, add=False
-    #         )
-
-    # db_request.fixture = db_fixture
-    # db_fixture.remaining_bets -= request.quantity
+    if request.seller == 2:
+        match request.result:
+            case db_fixture.home_team.team.name:
+                db_fixture.reserved_home += request.quantity  # type: ignore
+            case db_fixture.away_team.team.name:
+                db_fixture.reserved_away += request.quantity  # type: ignore
+            case _:
+                db_fixture.reserved_draw += request.quantity  # type: ignore
 
     db.commit()
     db.refresh(db_fixture)
     db.refresh(db_request)
 
     # Notify connected clients
-    print("User id in upsert is ", db_request.user_id)
-    requests = get_requests(db, db_request.user_id)
-    notify_clients(db_request.user_id, requests)
+    print("User id in upsert is ", str(db_request.user_id))
+    db_requests = get_requests(db, str(db_request.user_id))
+    notify_clients(str(db_request.user_id), db_requests)
 
     return db_request
 
