@@ -14,6 +14,7 @@ from app.dependencies import check_backend_bets  # ? But why tho?
 from app.dependencies import (
     check_balance,
     check_bets,
+    check_discounted_balance,
     check_reserved_bets,
     get_location,
     verify_post_token,
@@ -284,7 +285,7 @@ async def reserve_request(
     request: request_schemas.RequestShort,
     db: Session = Depends(get_db),
     bets: str = Depends(check_reserved_bets),
-    balance: None = Depends(check_balance),
+    balance: None = Depends(check_discounted_balance),
 ):
     """Buy a reserve a request."""
     db_request = crud.reserve_request(db, request, bets)
