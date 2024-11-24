@@ -1,3 +1,12 @@
+# [1.1.0](https://github.com/benjahuenchunir/arqui-backend/compare/v1.0.3...v1.1.0) (2024-11-24)
+
+
+### Features
+
+* add check_discounted_balance function and integrate it into reserve_request ([bd29da0](https://github.com/benjahuenchunir/arqui-backend/commit/bd29da027a85d3ff3507523a5f8210993c5c03c8))
+* add reserve request functionality and validation for reserved bets ([142f037](https://github.com/benjahuenchunir/arqui-backend/commit/142f03760d18c2d6cb3ed29b4bc0de6fd7712905))
+* expose PostgreSQL port in development configuration ([4b3f229](https://github.com/benjahuenchunir/arqui-backend/commit/4b3f2297b7ab32b18f003fdd487dc310f24f3ec6))
+
 ## [1.0.3](https://github.com/benjahuenchunir/arqui-backend/compare/v1.0.2...v1.0.3) (2024-11-24)
 
 
