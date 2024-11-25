@@ -230,9 +230,13 @@ def get_available_fixtures(
     return query.offset(page * count).limit(count).all()
 
 
-def get_tradable_fixtures(db: Session):
+def get_tradeable_fixtures(
+    db: Session,
+    page: int = 0,
+    count: int = 25,
+):
     """Get tradable fixtures."""
-    return (
+    query = (
         db.query(models.FixtureModel)
         .filter(models.FixtureModel.status_short == "NS")
         .filter(
@@ -243,6 +247,8 @@ def get_tradable_fixtures(db: Session):
             )
         )
     )
+
+    return query.offset(page * count).limit(count).all()
 
 
 def get_fixture_by_id(db: Session, fixture_id: int):

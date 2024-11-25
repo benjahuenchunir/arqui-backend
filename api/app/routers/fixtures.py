@@ -65,6 +65,21 @@ def get_available_fixtures(
     return fixtures.get_available_fixtures(db, page=page, count=count)
 
 
+# GET /fixtures/tradeable
+@router.get(
+    "/tradeable",
+    response_model=List[response_schemas.AvailableFixture],
+    status_code=status.HTTP_200_OK,
+)
+def get_tradeable_fixtures(
+    db: Session = Depends(get_db),
+    page: int = 0,
+    count: int = 25,
+):
+    """Get tradeable fixtures."""
+    return fixtures.get_tradeable_fixtures(db, page=page, count=count)
+
+
 # GET /fixtures/{fixture_id}
 @router.get(
     "/{fixture_id}",
