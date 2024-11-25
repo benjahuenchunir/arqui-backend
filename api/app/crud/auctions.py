@@ -29,6 +29,16 @@ def upsert_offer(db: Session, offer: request_schemas.Auction):
     return offer
 
 
+def get_offers(db: Session):
+    """Get all offers."""
+    return (
+        db.query(models.OfferModel)
+        .filter(models.OfferModel.status == "available")
+        .filter(models.OfferModel.group_id != 2)
+        .all()
+    )
+
+
 def upsert_proposal(db: Session, proposal: request_schemas.Auction):
 
     db_proposal = models.ProposalModel(

@@ -28,9 +28,9 @@ if not PATH_AUCTIONS:
 #########################################################
 
 
-# POST /offer
+# POST /offers
 @router.post(
-    "/offer",
+    "/offers",
     response_model=response_schemas.Auction,
     status_code=status.HTTP_201_CREATED,
 )
@@ -39,14 +39,32 @@ async def publish_offer(
     db: Session = Depends(get_db),
 ):
     """Publish an offer."""
+
     verify_admin(user_id=offer.uid, db=db)
 
     return publish.create_offer(db, offer)
 
 
-# POST /proposal
+# GET /offers
+@router.get(
+    "/offers",
+    response_model=response_schemas.Auction,
+    status_code=status.HTTP_200_OK,
+)
+async def get_offers(
+    user_id: str,
+    db: Session = Depends(get_db),
+):
+    """Get all offers."""
+
+    verify_admin(user_id=user_id, db=db)
+
+    return auctions.get_offers(db)
+
+
+# POST /proposals
 @router.post(
-    "/proposal",
+    "/proposals",
     response_model=response_schemas.Auction,
     status_code=status.HTTP_201_CREATED,
 )
