@@ -9,7 +9,8 @@ import sys
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
-from app import crud, publish
+from app import publish
+from app.crud import requests, users
 from app.dependencies import check_backend_bets  # ? But why tho?
 from app.dependencies import (
     check_balance,
@@ -93,8 +94,8 @@ async def get_requests(
     await websocket.accept()
     connected_clients.append((websocket, user_id))
 
-    requests = crud.get_requests(db, user_id)
-    await websocket.send_json([request.dict() for request in requests])
+    db_requests = requests.get_requests(db, user_id)
+    await websocket.send_json([request.dict() for request in db_requests])
 
     try:
         while True:
@@ -131,7 +132,7 @@ async def start_webpay_flow(
     """Start the Webpay flow."""
 
     amount: int = request.quantity * BET_PRICE  # type: ignore
-    transaction = crud.create_transaction(db, request)
+    transaction = requests.create_transaction(db, request)
 
     try:
         transaction_response = webpay_plus_transaction.create(
@@ -153,7 +154,7 @@ async def start_webpay_flow(
     )
 
     asyncio.create_task(
-        crud.link_request(
+        requests.link_request(
             db,
             request_schemas.Link(
                 uid=transaction.user_id,  # type: ignore
@@ -183,7 +184,7 @@ async def commit_transaction(
 ):
     """Commit a transaction."""
 
-    transaction = crud.get_transaction(db, request.token)
+    transaction = requests.get_transaction(db, request.token)
 
     if transaction is None:
         raise HTTPException(status_code=404, detail="Transaction not found")
@@ -217,7 +218,7 @@ async def commit_transaction(
         ),
     )
 
-    user = crud.get_user(db, transaction.user_id)  # type: ignore
+    user = users.get_user(db, transaction.user_id)  # type: ignore
     if user is None:
         raise HTTPException(status_code=404, detail="User not found")
 
@@ -263,7 +264,7 @@ async def start_wallet_flow(
     published_request = publish.create_request(db, request)
 
     asyncio.create_task(
-        crud.link_request(
+        requests.link_request(
             db,
             request_schemas.Link(
                 uid=request.uid,
@@ -288,7 +289,7 @@ async def reserve_request(
     balance: None = Depends(check_discounted_balance),
 ):
     """Buy a reserve a request."""
-    db_request = crud.reserve_request(db, request, bets)
+    db_request = requests.reserve_request(db, request, bets)
 
     if db_request is None:
         raise HTTPException(status_code=404, detail="Fixture not found")
@@ -315,7 +316,7 @@ def upsert_request(
 ):
     """Upsert a new request."""
 
-    db_request = crud.upsert_request(db, request, wallet=False)
+    db_request = requests.upsert_request(db, request, wallet=False)
 
     if db_request is None:
         raise HTTPException(status_code=404, detail="Fixture not found")
@@ -336,7 +337,7 @@ async def update_request(
     token: None = Depends(verify_post_token),
 ):
     """Update a request."""
-    response = await crud.update_request(db, request_id, request)
+    response = await requests.update_request(db, request_id, request)
     if response is None:
         raise HTTPException(status_code=404, detail="Request not found")
     return response

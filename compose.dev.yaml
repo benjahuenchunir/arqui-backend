@@ -32,6 +32,7 @@ services:
       POST_TOKEN: ${POST_TOKEN}
       PATH_FIXTURES: ${PATH_FIXTURES}
       PATH_REQUESTS: ${PATH_REQUESTS}
+      PATH_USERS: ${PATH_USERS}
       PATH_AUCTIONS: ${PATH_AUCTIONS}
 
       PUBLISHER_HOST: arquisis-publisher

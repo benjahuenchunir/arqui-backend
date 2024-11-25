@@ -1,12 +1,20 @@
-from app import crud
+import os
+import sys
+
+from app.crud import users
 from app.schemas import request_schemas
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from db.database import get_db
 
+PATH_USERS = os.getenv("PATH_USERS")
+if not PATH_USERS:
+    print("PATH_USERS environment variable not set")
+    sys.exit(1)
+
 router = APIRouter(
-    prefix=f"/users",
+    prefix=f"/{PATH_USERS}",
     tags=["users"],
     responses={404: {"description": "Not found"}},
 )
@@ -23,7 +31,7 @@ router = APIRouter(
 )
 def create_user(user: request_schemas.User, db: Session = Depends(get_db)):
     """Create a new user."""
-    return crud.create_user(db, user)
+    return users.create_user(db, user)
 
 
 # GET /wallet/{uid}
@@ -34,7 +42,7 @@ def create_user(user: request_schemas.User, db: Session = Depends(get_db)):
 def get_wallet(uid: str, db: Session = Depends(get_db)):
     """Get the wallet of the user."""
     print("Uid is ", uid)
-    user = crud.get_user(db, uid)
+    user = users.get_user(db, uid)
     if user is None:
         raise HTTPException(status_code=404, detail="User not found")
     return {"balance": user.wallet}
@@ -50,4 +58,4 @@ def update_balance(
     db: Session = Depends(get_db),
 ):
     """Update the balance of the user."""
-    return crud.update_balance(db, wallet.uid, wallet.amount)
+    return users.update_balance(db, wallet.uid, wallet.amount)

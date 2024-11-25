@@ -4,7 +4,7 @@ import sys
 from typing import List, Optional
 
 import requests
-from app import crud
+from app.crud import fixtures, users
 from app.dependencies import verify_post_token
 from app.schemas import request_schemas, response_schemas
 from fastapi import APIRouter, Depends, HTTPException, Request, status
@@ -45,7 +45,7 @@ def get_fixtures(
     date: Optional[str] = None,
 ):
     """Get fixtures."""
-    return crud.get_fixtures(
+    return fixtures.get_fixtures(
         db, page=page, count=count, home=home, away=away, date=date
     )
 
@@ -62,7 +62,7 @@ def get_available_fixtures(
     count: int = 25,
 ):
     """Get available fixtures."""
-    return crud.get_available_fixtures(db, page=page, count=count)
+    return fixtures.get_available_fixtures(db, page=page, count=count)
 
 
 # GET /fixtures/{fixture_id}
@@ -73,7 +73,7 @@ def get_available_fixtures(
 )
 def get_fixture(fixture_id: int, db: Session = Depends(get_db)):
     """Get a fixture."""
-    db_fixture = crud.get_fixture_by_id(db, fixture_id)
+    db_fixture = fixtures.get_fixture_by_id(db, fixture_id)
     if db_fixture is None:
         raise HTTPException(status_code=404, detail="Fixture not found")
     return db_fixture
@@ -94,7 +94,7 @@ def post_recommended_fixtures(
     user = {"user_id": user_id}
     job_id = requests.post(url, headers=headers, json=user).json()
 
-    db_user = crud.get_user(db, user_id)
+    db_user = users.get_user(db, user_id)
     db_user.job_id = job_id["job_id"]  # type: ignore
     db.commit()
 
@@ -110,7 +110,7 @@ def post_recommended_fixtures(
 def get_recommended_fixtures(user_id: str, db: Session = Depends(get_db)):
     """Get recommended fixtures."""
 
-    db_user = crud.get_user(db, user_id)
+    db_user = users.get_user(db, user_id)
     if db_user is None:
         raise HTTPException(status_code=404, detail="User not found")
 
@@ -126,7 +126,9 @@ def get_recommended_fixtures(user_id: str, db: Session = Depends(get_db)):
     if user_recommendations["status"] != "Completed":
         return {"fixtures": [], "last_updated": datetime.datetime.now()}
 
-    recommended_fixtures = crud.get_recommendations(db, user_recommendations["result"])
+    recommended_fixtures = fixtures.get_recommendations(
+        db, user_recommendations["result"]
+    )
 
     return {
         "fixtures": recommended_fixtures,
@@ -152,7 +154,7 @@ async def upsert_fixture(
     token: None = Depends(verify_post_token),
 ):
     """Upsert a new fixture."""
-    return crud.upsert_fixture(db, fixture)
+    return fixtures.upsert_fixture(db, fixture)
 
 
 # PATCH /fixtures/{fixture_id}
@@ -168,11 +170,11 @@ def update_fixture(
     token: None = Depends(verify_post_token),
 ):
     """Update a fixture."""
-    db_fixture = crud.update_fixture(db, fixture_id, fixture)
+    db_fixture = fixtures.update_fixture(db, fixture_id, fixture)
 
     if db_fixture is None:
         raise HTTPException(status_code=404, detail="Fixture not found")
 
-    crud.pay_bets(db, fixture_id)
+    fixtures.pay_bets(db, fixture_id)
 
     return db_fixture

@@ -1,7 +1,8 @@
 import os
 import sys
 
-from app import crud, publish
+from app import publish
+from app.crud import auctions
 from app.dependencies import verify_admin, verify_post_token
 from app.schemas import request_schemas, response_schemas
 from fastapi import APIRouter, Depends, HTTPException, Request, status
@@ -37,9 +38,9 @@ async def upsert_auction(
     token: None = Depends(verify_post_token),
 ):
     if auction.type == "offer":
-        return crud.upsert_offer(db, auction)
+        return auctions.upsert_offer(db, auction)
     elif auction.type == "proposal":
-        return crud.upsert_proposal(db, auction)
+        return auctions.upsert_proposal(db, auction)
 
 
 # PATCH /
@@ -54,29 +55,29 @@ async def update_auction(
     token: None = Depends(verify_post_token),
 ):
     if auction.type == "acceptance":
-        proposal = crud.get_proposal(db, auction.proposal_id)
-        offer = crud.get_offer(db, auction.auction_id)
+        proposal = auctions.get_proposal(db, auction.proposal_id)
+        offer = auctions.get_offer(db, auction.auction_id)
 
         proposal.status = "accepted"
         offer.status = "sold"
 
-        crud.update_proposal(db, auction.proposal_id, proposal)
-        crud.update_offer(db, auction_id, offer)
+        auctions.update_proposal(db, auction.proposal_id, proposal)
+        auctions.update_offer(db, auction_id, offer)
 
-        for proposal in crud.get_offer_proposals(db, auction.auction_id):
+        for proposal in auctions.get_offer_proposals(db, auction.auction_id):
             if proposal.status == "pending":
                 proposal.status = "rejected"
-                crud.update_proposal(db, proposal.id, proposal)
+                auctions.update_proposal(db, proposal.id, proposal)
 
         return auction
 
     elif auction.type == "rejection":
 
-        proposal = crud.get_proposal(db, auction.proposal_id)
+        proposal = auctions.get_proposal(db, auction.proposal_id)
 
         proposal.status = "rejected"
 
-        crud.update_proposal(db, auction.proposal_id, auction)
+        auctions.update_proposal(db, auction.proposal_id, auction)
 
         return auction
 
@@ -140,7 +141,7 @@ async def accept_proposal(
     db: Session = Depends(get_db),
 ):
     verify_admin(user_id=request.user_id, db=db)
-    proposal = crud.get_proposal(db, request.proposal_id)
+    proposal = auctions.get_proposal(db, request.proposal_id)
 
     return publish.create_acceptance(db, proposal)
 
@@ -156,7 +157,7 @@ async def reject_proposal(
     db: Session = Depends(get_db),
 ):
     verify_admin(user_id=request.user_id, db=db)
-    proposal = crud.get_proposal(db, request.proposal_id)
+    proposal = auctions.get_proposal(db, request.proposal_id)
 
     if not proposal:
         raise HTTPException(status_code=404, detail="Proposal not found")
