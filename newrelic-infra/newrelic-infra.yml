@@ -12,8 +12,5 @@ ignored_mount_points_regexes:
   - "^/host/mnt/wsl/.*"
   - "^/host/docker-desktop-bind-mounts/.*"
   - "^/host/var/lib/docker/.*"  # Ignora los montajes de Docker Desktop
-
-# Desactivar el NetworkSampler para evitar errores relacionados
-disable_sampler: 
-  - NetworkSampler
-  - StorageSampler
+  - "^/host/mnt/wsl/docker-desktop-bind-mounts/.*"
+  - "^/host/mnt/wsl/docker-desktop-bind-mounts/Ubuntu/.*"

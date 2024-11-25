@@ -11,8 +11,10 @@ services:
     network_mode: host
     pid: host
     privileged: true
+    entrypoint: ["/tini", "--"]
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock"
+      - "/proc:/host/proc:ro"
     environment:
       - NRIA_LICENSE_KEY=${NEW_RELIC_LICENSE_KEY}
       - NRIA_VERBOSE=0

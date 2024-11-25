@@ -120,7 +120,8 @@ services:
     build:
       context: ./
       dockerfile: ./jobs_master/Dockerfile
-    command: uvicorn producer:app --reload --host 0.0.0.0 --port 7998
+    command: >
+      sh -c "NEW_RELIC_CONFIG_FILE=newrelic.ini newrelic-admin run-program uvicorn producer:app --reload --host 0.0.0.0 --port 7998"
     volumes:
       - ./jobs_master:/opt/
       - ./db:/opt/db
@@ -130,6 +131,7 @@ services:
       CELERY_BROKER_URL: redis://redis-broker:6379/0
       CELERY_RESULT_BACKEND: redis://redis-broker:6379/0
       GROUP_ID: ${GROUP_ID}
+      NEW_RELIC_LICENSE_KEY: YOUR_NEW_RELIC_LICENSE_KEY
     restart: on-failure
     depends_on:
       - redis-broker
