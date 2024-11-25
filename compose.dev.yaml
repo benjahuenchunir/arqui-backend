@@ -17,7 +17,9 @@ services:
     volumes:
       - ./api/app:/api/app
       - ./db:/api/db
-    command: uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+    command: >
+      sh -c "NEW_RELIC_CONFIG_FILE=/api/newrelic.ini newrelic-admin run-program uvicorn app.main:app --reload --host 0.0.0.0 --port 8000"
+
     ports:
       - "8001:8000"
     depends_on:
@@ -52,7 +54,27 @@ services:
       S3_BUCKET_NAME: ${S3_BUCKET_NAME}
       AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
       AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+
+      NEW_RELIC_LICENSE_KEY: ${NEW_RELIC_LICENSE_KEY}
     restart: on-failure
+
+  newrelic-infra:
+    container_name: newrelic-infra
+    build:
+      context: ./newrelic-infra
+      dockerfile: newrelic-infra.dockerfile
+    cap_add:
+      - SYS_PTRACE
+    network_mode: host
+    pid: host
+    privileged: true
+    volumes:
+      - "/:/host:ro"
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    environment:
+      - NRIA_LICENSE_KEY=${NEW_RELIC_LICENSE_KEY}
+      - NRIA_VERBOSE=0
+    restart: unless-stopped
 
   arquisis-listener:
     image: listener:latest
