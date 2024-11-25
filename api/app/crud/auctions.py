@@ -1,5 +1,6 @@
 """CRUD operations for auctions."""
 
+from app.crud import fixtures
 from app.schemas import request_schemas
 from fastapi import HTTPException
 from sqlalchemy.exc import IntegrityError
@@ -11,8 +12,13 @@ from db import models
 def upsert_offer(db: Session, offer: request_schemas.Auction):
     """Upsert an offer."""
 
+    db_fixture = fixtures.get_fixture_by_id(db, offer.fixture_id)
+
+    if not db_fixture:
+        raise HTTPException(status_code=404, detail="Fixture not found")
+
     db_offer = models.OfferModel(
-        id=str(offer.auction_id),
+        auction_id=str(offer.auction_id),
         fixture_id=offer.fixture_id,
         league_name=offer.league_name,
         round=offer.round,
@@ -20,6 +26,14 @@ def upsert_offer(db: Session, offer: request_schemas.Auction):
         quantity=offer.quantity,
         group_id=offer.group_id,
     )
+
+    match offer.result:
+        case db_fixture.home_team.team.name:
+            db_fixture.reserved_home -= offer.quantity  # type: ignore
+        case db_fixture.away_team.team.name:
+            db_fixture.reserved_away -= offer.quantity  # type: ignore
+        case "---":
+            db_fixture.reserved_draw -= offer.quantity  # type: ignore
 
     try:
         db.add(db_offer)
@@ -40,6 +54,7 @@ def get_offers(db: Session):
 
 
 def upsert_proposal(db: Session, proposal: request_schemas.Auction):
+    """Upsert a proposal."""
 
     db_proposal = models.ProposalModel(
         auction_id=proposal.auction_id,

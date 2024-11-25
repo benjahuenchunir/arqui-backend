@@ -48,7 +48,7 @@ async def publish_offer(
 # GET /offers
 @router.get(
     "/offers",
-    response_model=response_schemas.Auction,
+    response_model=list[response_schemas.Offer],
     status_code=status.HTTP_200_OK,
 )
 async def get_offers(

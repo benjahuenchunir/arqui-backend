@@ -59,3 +59,12 @@ def update_balance(
 ):
     """Update the balance of the user."""
     return users.update_balance(db, wallet.uid, wallet.amount)
+
+
+@router.delete(
+    "/{uid}",
+    status_code=status.HTTP_200_OK,
+)
+def delete_user(uid: str, db: Session = Depends(get_db)):
+    """Delete a user."""
+    return users.delete_user(db, uid)

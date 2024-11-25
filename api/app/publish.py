@@ -8,6 +8,7 @@ from typing import Optional
 import requests as http_requests
 from app.crud import fixtures, requests, users
 from app.schemas import request_schemas, response_schemas
+from fastapi import HTTPException
 from requests.exceptions import RequestException
 from sqlalchemy.orm import Session
 
@@ -26,18 +27,21 @@ def create_request(
     request_id: Optional[str] = None,
 ):
     """Create a request."""
+
+    print("Publishing", req)
     db_fixture = fixtures.get_fixture_by_id(db, req.fixture_id)
 
     if db_fixture is None:
-        return None
+        raise HTTPException(status_code=404, detail="Fixture not found")
 
     db_user = users.get_user(db, req.uid)
 
     if db_user is None:
-        return None
+        raise HTTPException(status_code=404, detail="User not found")
 
-    request = response_schemas.Request(
-        request_id=request_id or uuid.uuid4(),  # type: ignore
+    print("here")
+    published_request = response_schemas.Request(
+        request_id=uuid.uuid4(),  # type: ignore
         group_id=str(GROUP_ID),
         fixture_id=req.fixture_id,
         league_name=db_fixture.league.name,
@@ -50,9 +54,10 @@ def create_request(
         wallet=not bool(deposit_token),
         seller=0 if not bool(db_user.admin) else int(GROUP_ID) if GROUP_ID else 2,
     )
-    publish_request(request)
+    print(published_request)
+    publish_request(published_request)
 
-    return request
+    return published_request
 
 
 def publish_request(request: response_schemas.Request):

@@ -49,3 +49,13 @@ def get_current_user(db: Session, user_id: str):
     return (
         db.query(models.UserModel).filter(models.UserModel.id == user_id).one_or_none()
     )
+
+
+def delete_user(db: Session, user_id: str):
+    """Delete a user."""
+    db_user = db.query(models.UserModel).filter_by(id=user_id).one_or_none()
+    if db_user is None:
+        return None
+    db.delete(db_user)
+    db.commit()
+    return db_user

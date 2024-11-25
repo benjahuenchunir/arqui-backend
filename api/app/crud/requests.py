@@ -82,6 +82,8 @@ def upsert_request(
     if db_fixture is None:
         return None
 
+    print("Upser request", request)
+
     db_request: models.RequestModel = models.RequestModel(
         request_id=str(request.request_id),
         group_id=int(request.group_id),
