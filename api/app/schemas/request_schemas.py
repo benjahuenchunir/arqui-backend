@@ -160,6 +160,7 @@ class OfferShort(BaseModel):
     fixture_id: int
     result: str
     quantity: int
+    uid: str
 
     class Config:
         from_atributes = True

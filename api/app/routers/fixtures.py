@@ -164,7 +164,6 @@ def get_recommended_fixtures(user_id: str, db: Session = Depends(get_db)):
 )
 async def upsert_fixture(
     fixture: request_schemas.WholeFixture,
-    request: Request,
     db: Session = Depends(get_db),
     token: None = Depends(verify_post_token),
 ):

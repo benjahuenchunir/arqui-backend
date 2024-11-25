@@ -1,12 +1,18 @@
+"""CRUD operations for auctions."""
+
 from app.schemas import request_schemas
+from fastapi import HTTPException
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from db import models
 
 
 def upsert_offer(db: Session, offer: request_schemas.Auction):
+    """Upsert an offer."""
 
     db_offer = models.OfferModel(
+        id=str(offer.auction_id),
         fixture_id=offer.fixture_id,
         league_name=offer.league_name,
         round=offer.round,
@@ -15,9 +21,12 @@ def upsert_offer(db: Session, offer: request_schemas.Auction):
         group_id=offer.group_id,
     )
 
-    db.add(db_offer)
-    db.commit()
-    return db_offer
+    try:
+        db.add(db_offer)
+        db.commit()
+    except IntegrityError as e:
+        raise HTTPException(status_code=409, detail="Offer already exists") from e
+    return offer
 
 
 def upsert_proposal(db: Session, proposal: request_schemas.Auction):
@@ -34,7 +43,7 @@ def upsert_proposal(db: Session, proposal: request_schemas.Auction):
 
     db.add(db_proposal)
     db.commit()
-    return db_proposal
+    return proposal
 
 
 def update_offer(db: Session, offer_id: str, offer: request_schemas.Offer):

@@ -1,3 +1,5 @@
+"""CRUD operations for fixtures."""
+
 import os
 import warnings
 from datetime import datetime
@@ -269,6 +271,10 @@ def pay_bets(db: Session, fixture_id: int):
 
     if db_fixture is None:
         print("Fixture not found")
+        return None
+
+    if str(db_fixture.status_short) != "FT":
+        print("Fixture not finished")
         return None
 
     db_requests = (

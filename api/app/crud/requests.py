@@ -1,3 +1,5 @@
+"""CRUD operations for requests."""
+
 import asyncio
 import os
 import uuid

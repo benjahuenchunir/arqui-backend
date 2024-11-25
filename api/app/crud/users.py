@@ -1,3 +1,5 @@
+"""CRUD operations for users."""
+
 from app.schemas import request_schemas
 from sqlalchemy.orm import Session
 from sqlalchemy.sql import func

@@ -110,28 +110,40 @@ def publish_validation(request: response_schemas.RequestValidation):
         raise RequestException(response.text)
 
 
-def create_offer(db: Session, ofr: request_schemas.OfferShort):
+def create_offer(db: Session, offer: request_schemas.OfferShort):
+    """Create and publish an offer."""
 
-    db_fixture = fixtures.get_fixture_by_id(db, ofr.fixture_id)
+    db_fixture = fixtures.get_fixture_by_id(db, offer.fixture_id)
 
     if db_fixture is None:
         return None
 
-    offer = response_schemas.Auction(
+    match offer.result:
+        case db_fixture.home_team.team.name:
+            if offer.quantity > db_fixture.reserved_home:  # type: ignore
+                return None
+        case db_fixture.away_team.team.name:
+            if offer.quantity > db_fixture.reserved_away:  # type: ignore
+                return None
+        case "---":
+            if offer.quantity > db_fixture.reserved_draw:  # type: ignore
+                return None
+
+    publish_offer = response_schemas.Auction(
         auction_id=uuid.uuid4(),
         proposal_id="",
-        fixture_id=ofr.fixture_id,
+        fixture_id=offer.fixture_id,
         league_name=db_fixture.league.name,
         round=db_fixture.league.round,
-        result=ofr.result,
-        quantity=ofr.quantity,
-        group_id=GROUP_ID,
+        result=offer.result,
+        quantity=offer.quantity,
+        group_id=int(GROUP_ID) if GROUP_ID else 2,
         type="offer",
     )
 
-    publish_auction(offer)
+    publish_auction(publish_offer)
 
-    return offer
+    return publish_offer
 
 
 def create_proposal(db: Session, prp: request_schemas.ProposalShort):
