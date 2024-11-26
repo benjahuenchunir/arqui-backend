@@ -26,5 +26,5 @@ COPY api/newrelic.ini /api/newrelic.ini
 RUN adduser -u 5678 --disabled-password --gecos "" appuser && chown -R appuser /api/app
 USER appuser
 
-#Código para el Newrelic, medida de metricas
-CMD ["sh", "-c", "NEW_RELIC_CONFIG_FILE=newrelic.ini newrelic-admin run-program uvicorn app.main:app --host 0.0.0.0 --port 8000"]
+# Código para el Newrelic, medida de metricas
+CMD ["sh", "-c", "NEW_RELIC_CONFIG_FILE=/api/newrelic.ini newrelic-admin run-program uvicorn app.main:app --host 0.0.0.0 --port 8000"]
