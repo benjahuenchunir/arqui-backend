@@ -1,3 +1,10 @@
+# [1.3.0](https://github.com/benjahuenchunir/arqui-backend/compare/v1.2.3...v1.3.0) (2024-11-26)
+
+
+### Features
+
+* dont know ([2a8407a](https://github.com/benjahuenchunir/arqui-backend/commit/2a8407a0defa3fb5635f14cfe304b2c667bd4600))
+
 ## [1.2.3](https://github.com/benjahuenchunir/arqui-backend/compare/v1.2.2...v1.2.3) (2024-11-26)
 
 
