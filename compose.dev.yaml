@@ -123,7 +123,7 @@ services:
       context: ./
       dockerfile: ./jobs_master/Dockerfile
     command: >
-      sh -c "NEW_RELIC_CONFIG_FILE=newrelic.ini newrelic-admin run-program uvicorn producer:app --reload --host 0.0.0.0 --port 7998"
+      sh -c "NEW_RELIC_CONFIG_FILE=/opt/newrelic.ini newrelic-admin run-program uvicorn producer:app --reload --host 0.0.0.0 --port 7998"
     volumes:
       - ./jobs_master:/opt/
       - ./db:/opt/db

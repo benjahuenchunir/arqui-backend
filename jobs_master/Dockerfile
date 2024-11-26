@@ -22,7 +22,7 @@ COPY jobs_master /opt/
 RUN pip install newrelic
 
 # Copia el archivo newrelic.ini
-COPY jobs_master/newrelic.ini .
+COPY jobs_master/newrelic.ini /opt/newrelic.ini
 
 # Comando predeterminado (puede ser sobrescrito por docker-compose)
-CMD ["sh", "-c", "NEW_RELIC_CONFIG_FILE=newrelic.ini newrelic-admin run-program uvicorn producer:app --reload --host 0.0.0.0 --port 7998"]
+CMD ["sh", "-c", "NEW_RELIC_CONFIG_FILE=/opt/newrelic.ini newrelic-admin run-program uvicorn producer:app --reload --host 0.0.0.0 --port 7998"]
