@@ -27,6 +27,17 @@ jobs:
         uses: aws-actions/amazon-ecr-login@v2
         with:
           registry-type: public
+      
+      - name: Build, tag, and push newrelic-infra
+        env:
+          REGISTRY: ${{ steps.login-ecr-public.outputs.registry }}
+          REGISTRY_ALIAS: v0y9v2i3
+          REPOSITORY: newrelic-infra
+          IMAGE_TAG: ${{ github.event.release.tag_name }}
+        run: |
+          cd newrelic-infra
+          docker build -t $REGISTRY/$REGISTRY_ALIAS/$REPOSITORY:$IMAGE_TAG .
+          docker push $REGISTRY/$REGISTRY_ALIAS/$REPOSITORY:$IMAGE_TAG
 
       - name: Build, tag, and push api
         env:
@@ -68,17 +79,6 @@ jobs:
         run: |
           cd publisher
           docker build -t $REGISTRY/$REGISTRY_ALIAS/$REPOSITORY:$IMAGE_TAG .
-          docker push $REGISTRY/$REGISTRY_ALIAS/$REPOSITORY:$IMAGE_TAG
-      
-      - name: Build, tag, and push newrelic-infra
-        env:
-          REGISTRY: ${{ steps.login-ecr-public.outputs.registry }}
-          REGISTRY_ALIAS: v0y9v2i3
-          REPOSITORY: newrelic-infra
-          IMAGE_TAG: ${{ github.event.release.tag_name }}
-        run: |
-          cd newrelic-infra
-          docker build -t $REGISTRY/$REGISTRY_ALIAS/$REPOSITORY:$IMAGE_TAG ./newrelic-infra/Dockerfile .
           docker push $REGISTRY/$REGISTRY_ALIAS/$REPOSITORY:$IMAGE_TAG
   
   deploy-to-ec2:
