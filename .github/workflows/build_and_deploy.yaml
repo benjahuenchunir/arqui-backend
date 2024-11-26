@@ -33,7 +33,7 @@ jobs:
           REGISTRY: ${{ steps.login-ecr-public.outputs.registry }}
           REGISTRY_ALIAS: v0y9v2i3
           REPOSITORY: newrelic-infra
-          IMAGE_TAG: ${{ github.event.release.tag_name }}
+          IMAGE_TAG: latest
         run: |
           cd newrelic-infra
           docker build -t $REGISTRY/$REGISTRY_ALIAS/$REPOSITORY:$IMAGE_TAG .
@@ -44,7 +44,7 @@ jobs:
           REGISTRY: ${{ steps.login-ecr-public.outputs.registry }}
           REGISTRY_ALIAS: v0y9v2i3
           REPOSITORY: api
-          IMAGE_TAG: ${{ github.event.release.tag_name }}
+          IMAGE_TAG: latest
         run: |
           docker build -t $REGISTRY/$REGISTRY_ALIAS/$REPOSITORY:$IMAGE_TAG -f ./api/Dockerfile .
           docker push $REGISTRY/$REGISTRY_ALIAS/$REPOSITORY:$IMAGE_TAG
@@ -54,7 +54,7 @@ jobs:
           REGISTRY: ${{ steps.login-ecr-public.outputs.registry }}
           REGISTRY_ALIAS: v0y9v2i3
           REPOSITORY: jobs-master
-          IMAGE_TAG: ${{ github.event.release.tag_name }}
+          IMAGE_TAG: latest
         run: |
           docker build -t $REGISTRY/$REGISTRY_ALIAS/$REPOSITORY:$IMAGE_TAG -f ./jobs_master/Dockerfile .
           docker push $REGISTRY/$REGISTRY_ALIAS/$REPOSITORY:$IMAGE_TAG
@@ -64,7 +64,7 @@ jobs:
           REGISTRY: ${{ steps.login-ecr-public.outputs.registry }}
           REGISTRY_ALIAS: v0y9v2i3
           REPOSITORY: listener
-          IMAGE_TAG: ${{ github.event.release.tag_name }}
+          IMAGE_TAG: latest
         run: |
           cd listener
           docker build -t $REGISTRY/$REGISTRY_ALIAS/$REPOSITORY:$IMAGE_TAG .
@@ -75,7 +75,7 @@ jobs:
           REGISTRY: ${{ steps.login-ecr-public.outputs.registry }}
           REGISTRY_ALIAS: v0y9v2i3
           REPOSITORY: publisher
-          IMAGE_TAG: ${{ github.event.release.tag_name }}
+          IMAGE_TAG: latest
         run: |
           cd publisher
           docker build -t $REGISTRY/$REGISTRY_ALIAS/$REPOSITORY:$IMAGE_TAG .
