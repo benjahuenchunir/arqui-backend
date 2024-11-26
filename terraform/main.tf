@@ -189,3 +189,84 @@ resource "null_resource" "deploy" {
     command = "bash deploy.sh"
   }
 }
+
+# ==================== API Gateway ====================
+
+# Define the autoscaling instances
+data "aws_instance" "autoscaling_instance" {
+  count = 1
+  filter {
+    name   = "tag:aws:autoscaling:groupName"
+    values = [aws_autoscaling_group.autoscaling_group.name]
+  }
+}
+
+# Define the API Gateway
+resource "aws_api_gateway_rest_api" "api" {
+  name        = "api-terraform"
+  description = "Example API Gateway"
+}
+
+# Define a resource in the API Gateway for /example
+resource "aws_api_gateway_resource" "example_resource" {
+  rest_api_id = aws_api_gateway_rest_api.api.id
+  parent_id   = aws_api_gateway_rest_api.api.root_resource_id
+  path_part   = "example"
+}
+
+# Define a GET method for the /example resource
+resource "aws_api_gateway_method" "example_get" {
+  rest_api_id   = aws_api_gateway_rest_api.api.id
+  resource_id   = aws_api_gateway_resource.example_resource.id
+  http_method   = "GET"
+  authorization = "NONE"
+}
+
+# Define the integration for the GET method on /example
+resource "aws_api_gateway_integration" "example_get_integration" {
+  rest_api_id = aws_api_gateway_rest_api.api.id
+  resource_id = aws_api_gateway_resource.example_resource.id
+  http_method = aws_api_gateway_method.example_get.http_method
+  type        = "MOCK"
+}
+
+# Define a resource in the API Gateway for /fixtures
+resource "aws_api_gateway_resource" "fixtures_resource" {
+  rest_api_id = aws_api_gateway_rest_api.api.id
+  parent_id   = aws_api_gateway_rest_api.api.root_resource_id
+  path_part   = "fixtures"
+}
+
+# Define a GET method for the /fixtures resource
+resource "aws_api_gateway_method" "fixtures_get" {
+  rest_api_id   = aws_api_gateway_rest_api.api.id
+  resource_id   = aws_api_gateway_resource.fixtures_resource.id
+  http_method   = "GET"
+  authorization = "NONE"
+}
+
+# Modify the integration for the GET method on /fixtures
+resource "aws_api_gateway_integration" "fixtures_get_integration" {
+  rest_api_id             = aws_api_gateway_rest_api.api.id
+  resource_id             = aws_api_gateway_resource.fixtures_resource.id
+  http_method             = aws_api_gateway_method.fixtures_get.http_method
+  type                    = "HTTP"
+  integration_http_method = "GET"
+  uri                     = "http://${data.aws_instance.autoscaling_instance[0].public_dns}/fixtures"
+}
+
+# Define a deployment for the API Gateway
+resource "aws_api_gateway_deployment" "example_deployment" {
+  depends_on = [
+    aws_api_gateway_integration.example_get_integration,
+    aws_api_gateway_integration.fixtures_get_integration
+  ]
+  rest_api_id = aws_api_gateway_rest_api.api.id
+}
+
+# Define a stage for the API Gateway
+resource "aws_api_gateway_stage" "example_stage" {
+  deployment_id = aws_api_gateway_deployment.example_deployment.id
+  rest_api_id   = aws_api_gateway_rest_api.api.id
+  stage_name    = "dev"
+}
