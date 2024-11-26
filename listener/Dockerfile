@@ -26,4 +26,4 @@ RUN adduser -u 5678 --disabled-password --gecos "" appuser && chown -R appuser /
 USER appuser
 
 # Cambiar el comando para ejecutar con New Relic
-CMD ["sh", "-c", "NEW_RELIC_CONFIG_FILE=/app/newrelic.ini newrelic-admin run-program python main.py"]
+CMD ["sh", "-c", "NEW_RELIC_CONFIG_FILE=newrelic.ini newrelic-admin run-program python main.py"]

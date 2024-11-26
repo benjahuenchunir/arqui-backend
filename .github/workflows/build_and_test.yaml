@@ -51,6 +51,7 @@ jobs:
         ENV: production
         EMAIL: ${{ secrets.EMAIL }}
         EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
+        NEW_RELIC_LICENSE_KEY: ${{ secrets.NEW_RELIC_LICENSE_KEY }}
 
     - name: Install Python
       run: sudo apt-get install -y python3 python3-pip

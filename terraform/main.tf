@@ -192,13 +192,21 @@ resource "null_resource" "deploy" {
 
 # ==================== API Gateway ====================
 
-# Define the autoscaling instances
-data "aws_instance" "autoscaling_instance" {
-  count = 1
+# Fetch the instance IDs of the instances created by the Auto Scaling group
+data "aws_instances" "autoscaling_instances" {
   filter {
     name   = "tag:aws:autoscaling:groupName"
     values = [aws_autoscaling_group.autoscaling_group.name]
   }
+  filter {
+    name   = "instance-state-name"
+    values = ["running"]
+  }
+}
+
+# Fetch the details of the first instance
+data "aws_instance" "autoscaling_instance" {
+  instance_id = data.aws_instances.autoscaling_instances.ids[0]
 }
 
 # Define the API Gateway
@@ -252,7 +260,7 @@ resource "aws_api_gateway_integration" "fixtures_get_integration" {
   http_method             = aws_api_gateway_method.fixtures_get.http_method
   type                    = "HTTP"
   integration_http_method = "GET"
-  uri                     = "http://${data.aws_instance.autoscaling_instance[0].public_dns}/fixtures"
+  uri                     = "http://${data.aws_instance.autoscaling_instance.public_dns}/fixtures"
 }
 
 # Define a deployment for the API Gateway
@@ -269,4 +277,9 @@ resource "aws_api_gateway_stage" "example_stage" {
   deployment_id = aws_api_gateway_deployment.example_deployment.id
   rest_api_id   = aws_api_gateway_rest_api.api.id
   stage_name    = "dev"
+}
+
+output "instance_public_dns" {
+  value       = data.aws_instance.autoscaling_instance.public_dns
+  description = "The public DNS of the instance created by the Auto Scaling group"
 }

@@ -11,7 +11,8 @@ services:
 
   arquisis-api:
     image: public.ecr.aws/v0y9v2i3/api
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8000
+    command: >
+      sh -c "NEW_RELIC_CONFIG_FILE=/api/newrelic.ini newrelic-admin run-program uvicorn app.main:app --reload --host 0.0.0.0 --port 8000"
     ports:
       - "8001:8000"
     depends_on:
@@ -43,6 +44,24 @@ services:
       EMAIL: ${EMAIL}
       EMAIL_PASSWORD: ${EMAIL_PASSWORD}
     restart: on-failure
+  
+  newrelic-infra:
+    container_name: newrelic-infra
+    build:
+      context: ./newrelic-infra
+      dockerfile: newrelic-infra.dockerfile
+    cap_add:
+      - SYS_PTRACE
+    network_mode: host
+    pid: host
+    privileged: true
+    volumes:
+      - "/:/host:ro"
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    environment:
+      - NRIA_LICENSE_KEY=${NEW_RELIC_LICENSE_KEY}
+      - NRIA_VERBOSE=0
+    restart: unless-stopped
 
   arquisis-listener:
     image: public.ecr.aws/v0y9v2i3/listener
@@ -79,7 +98,8 @@ services:
 
   arquisis-jobs-master:
     image: public.ecr.aws/v0y9v2i3/jobs-master
-    command: uvicorn producer:app --host 0.0.0.0 --port 7998
+    command: >
+      sh -c "NEW_RELIC_CONFIG_FILE=newrelic.ini newrelic-admin run-program uvicorn producer:app --reload --host 0.0.0.0 --port 7998"
     environment:
       ENV: ${ENV}
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@arquisis-database:5432/${POSTGRES_DB_NAME}
