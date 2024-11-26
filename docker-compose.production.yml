@@ -46,10 +46,7 @@ services:
     restart: on-failure
   
   newrelic-infra:
-    container_name: newrelic-infra
-    build:
-      context: ./newrelic-infra
-      dockerfile: newrelic-infra.dockerfile
+    image: public.ecr.aws/v0y9v2i3/newrelic-infra
     cap_add:
       - SYS_PTRACE
     network_mode: host
