@@ -14,19 +14,20 @@ agent.initialize('./newrelic.ini')  # Ajusta la ruta si es necesario
 celery_app = Celery(
     __name__,
     # https://docs.celeryq.dev/en/stable/getting-started/backends-and-brokers/index.html
-    broker=os.environ.get('CELERY_BROKER_URL', ''),
-    backend=os.environ.get('CELERY_RESULT_BACKEND', '')
+    broker=os.environ.get("CELERY_BROKER_URL", ""),
+    backend=os.environ.get("CELERY_RESULT_BACKEND", ""),
 )
 
 # Setup to use all the variables in settings
 # that begins with 'CELERY_'
-celery_app.config_from_object('celery_config.config', namespace='CELERY')
+celery_app.config_from_object("celery_config.config", namespace="CELERY")
 
 # Habilitar instrumentación de tareas (opcional)
-from newrelic.agent import register_application, current_transaction
+from newrelic.agent import current_transaction, register_application
 
 # Registrar la aplicación en New Relic (opcional)
 register_application(timeout=10.0)
+
 
 # Decorador para instrumentar manualmente una tarea
 @celery_app.task(name="example_task")
