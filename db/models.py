@@ -209,7 +209,7 @@ class OfferModel(Base):
 
     __tablename__ = "offers"
 
-    id = Column(String, primary_key=True, index=True)
+    auction_id = Column(String, primary_key=True, index=True)
     fixture_id = Column(Integer, ForeignKey("fixtures.id"))
     league_name = Column(String(255))
     round = Column(String(255))
@@ -224,8 +224,8 @@ class ProposalModel(Base):
 
     __tablename__ = "proposals"
 
-    id = Column(String, primary_key=True, index=True)
-    auction_id = Column(String, ForeignKey("offers.id"))
+    auction_id = Column(String, ForeignKey("offers.auction_id"))
+    proposal_id = Column(String, primary_key=True, index=True)
     fixture_id = Column(Integer, ForeignKey("fixtures.id"))
     league_name = Column(String(255))
     round = Column(String(255))
@@ -233,3 +233,12 @@ class ProposalModel(Base):
     quantity = Column(Integer)
     group_id = Column(Integer)
     status = Column(String(255), default="pending")
+
+
+class DiscountModel(Base):
+    """Base class for discounts"""
+
+    __tablename__ = "discounts"
+
+    id = Column(String, primary_key=True, index=True, default="single_row")
+    discount = Column(Boolean, default=False)

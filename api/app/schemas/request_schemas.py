@@ -160,6 +160,7 @@ class OfferShort(BaseModel):
     fixture_id: int
     result: str
     quantity: int
+    uid: str
 
     class Config:
         from_atributes = True
@@ -184,6 +185,7 @@ class ProposalShort(BaseModel):
     fixture_id: int
     result: str
     quantity: int
+    uid: str
 
     class Config:
         from_attributes = True
@@ -205,7 +207,7 @@ class Proposal(BaseModel):
 
 
 class Auction(BaseModel):
-    auction_id: UUID
+    auction_id: Union[str, UUID]
     proposal_id: Union[str, UUID]
     fixture_id: int
     league_name: str

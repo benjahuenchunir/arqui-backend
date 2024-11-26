@@ -108,10 +108,11 @@ def on_validation(payload):
     except requests.exceptions.RequestException as e:
         logging.error("Error processing validation: %s", str(e))
 
+
 def on_auction(payload):
     """Callback for a message on the auction topic"""
     try:
-        
+
         if payload["type"] == "offer" or payload["type"] == "proposal":
 
             response = requests.post(
@@ -120,7 +121,7 @@ def on_auction(payload):
                 headers={"Authorization": f"Bearer {POST_TOKEN}"},
                 timeout=5,
             )
-            if response.status_code != 200:
+            if response.status_code != 201:
                 logging.error("Failed to post auction: %s", response.text)
 
         elif payload["type"] == "acceptance" or payload["type"] == "rejection":
@@ -131,9 +132,8 @@ def on_auction(payload):
                 headers={"Authorization": f"Bearer {POST_TOKEN}"},
                 timeout=5,
             )
-            if response.status_code != 200:
+            if response.status_code != 201:
                 logging.error("Failed to post auction: %s", response.text)
-            
 
     except requests.exceptions.RequestException as e:
         logging.error("Error processing auction: %s", str(e))

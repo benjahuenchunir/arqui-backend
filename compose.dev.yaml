@@ -19,7 +19,9 @@ services:
     volumes:
       - ./api/app:/api/app
       - ./db:/api/db
-    command: uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+    command: >
+      sh -c "NEW_RELIC_CONFIG_FILE=/api/newrelic.ini newrelic-admin run-program uvicorn app.main:app --reload --host 0.0.0.0 --port 8000"
+
     ports:
       - "8001:8000"
     depends_on:
@@ -32,7 +34,9 @@ services:
       POST_TOKEN: ${POST_TOKEN}
       PATH_FIXTURES: ${PATH_FIXTURES}
       PATH_REQUESTS: ${PATH_REQUESTS}
+      PATH_USERS: ${PATH_USERS}
       PATH_AUCTIONS: ${PATH_AUCTIONS}
+      PATH_DISCOUNTS: ${PATH_DISCOUNTS}
 
       PUBLISHER_HOST: arquisis-publisher
       PUBLISHER_PORT: 7999
@@ -55,6 +59,24 @@ services:
       AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
       AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
     restart: on-failure
+
+  newrelic-infra:
+    container_name: newrelic-infra
+    build:
+      context: ./newrelic-infra
+      dockerfile: newrelic-infra.dockerfile
+    cap_add:
+      - SYS_PTRACE
+    network_mode: host
+    pid: host
+    privileged: true
+    volumes:
+      - "/:/host:ro"
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    environment:
+      - NRIA_LICENSE_KEY=${NEW_RELIC_LICENSE_KEY}
+      - NRIA_VERBOSE=0
+    restart: unless-stopped
 
   arquisis-listener:
     image: listener:latest
@@ -100,7 +122,8 @@ services:
     build:
       context: ./
       dockerfile: ./jobs_master/Dockerfile
-    command: uvicorn producer:app --reload --host 0.0.0.0 --port 7998
+    command: >
+      sh -c "NEW_RELIC_CONFIG_FILE=newrelic.ini newrelic-admin run-program uvicorn producer:app --reload --host 0.0.0.0 --port 7998"
     volumes:
       - ./jobs_master:/opt/
       - ./db:/opt/db

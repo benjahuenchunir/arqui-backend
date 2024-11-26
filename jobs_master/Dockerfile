@@ -17,3 +17,12 @@ RUN pip install --upgrade --no-cache-dir -r requirements.txt
 WORKDIR /opt
 COPY db /opt/db
 COPY jobs_master /opt/
+
+# Instala New Relic
+RUN pip install newrelic
+
+# Copia el archivo newrelic.ini
+COPY jobs_master/newrelic.ini .
+
+# Comando predeterminado (puede ser sobrescrito por docker-compose)
+CMD ["sh", "-c", "NEW_RELIC_CONFIG_FILE=newrelic.ini newrelic-admin run-program uvicorn producer:app --reload --host 0.0.0.0 --port 7998"]

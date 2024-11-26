@@ -1,0 +1,16 @@
+license_key: 414d712438cde1485e8634e8179bb47cFFFFNRAL
+custom_attributes:
+  environment: development
+  project: arqui-backend
+log:
+  file: /var/log/newrelic-infra.log
+  level: info
+verbose: 0
+
+# Ignorar puntos de montaje problemáticos
+ignored_mount_points_regexes:
+  - "^/host/mnt/wsl/.*"
+  - "^/host/docker-desktop-bind-mounts/.*"
+  - "^/host/var/lib/docker/.*"  # Ignora los montajes de Docker Desktop
+  - "^/host/mnt/wsl/docker-desktop-bind-mounts/.*"
+  - "^/host/mnt/wsl/docker-desktop-bind-mounts/Ubuntu/.*"
