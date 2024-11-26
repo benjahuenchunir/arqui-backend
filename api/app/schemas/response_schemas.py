@@ -130,7 +130,7 @@ class RequestValidation(BaseModel):
 
 
 class Auction(BaseModel):
-    auction_id: UUID
+    auction_id: Union[str, UUID]
     proposal_id: Union[str, UUID]
     fixture_id: int
     league_name: str
@@ -139,3 +139,26 @@ class Auction(BaseModel):
     quantity: int
     group_id: Union[int, str]
     type: str
+
+
+class Offer(BaseModel):
+    auction_id: Union[str, UUID]
+    fixture_id: int
+    league_name: str
+    round: str
+    result: str
+    quantity: int
+    group_id: Union[int, str]
+    status: str
+
+
+class Proposal(BaseModel):
+    auction_id: Union[str, UUID]
+    proposal_id: Union[str, UUID]
+    fixture_id: int
+    league_name: str
+    round: str
+    result: str
+    quantity: int
+    group_id: Union[int, str]
+    status: str

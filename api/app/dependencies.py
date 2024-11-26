@@ -1,6 +1,6 @@
 import os
 
-from app import crud
+from app.crud import fixtures, users
 from app.schemas import request_schemas
 from fastapi import Depends, HTTPException, Request
 from sqlalchemy.orm import Session
@@ -40,12 +40,12 @@ def get_location(request: Request) -> str:
 def check_balance(request: request_schemas.RequestShort):
     """Check the balance of the user."""
     db: Session = next(get_db())
-    user = crud.get_user(db, request.uid)
+    user = users.get_user(db, request.uid)
     if user:
         if user.wallet < request.quantity * int(BET_PRICE):  # type: ignore
             raise HTTPException(status_code=403, detail="Insufficient funds")
 
-        crud.update_balance(
+        users.update_balance(
             db,
             user.id,  # type: ignore
             request.quantity * int(BET_PRICE),  # type: ignore
@@ -56,12 +56,12 @@ def check_balance(request: request_schemas.RequestShort):
 def check_discounted_balance(request: request_schemas.RequestShort):
     """Check the balance of the user."""
     db: Session = next(get_db())
-    user = crud.get_user(db, request.uid)
+    user = users.get_user(db, request.uid)
     if user:
         if user.wallet < request.quantity * int(BET_PRICE) * 0.9:  # type: ignore
             raise HTTPException(status_code=403, detail="Insufficient funds")
 
-        crud.update_balance(
+        users.update_balance(
             db,
             user.id,  # type: ignore
             request.quantity * int(BET_PRICE) * 0.9,  # type: ignore
@@ -72,7 +72,7 @@ def check_discounted_balance(request: request_schemas.RequestShort):
 def check_bets(request: request_schemas.RequestShort):
     """Check the number of bets."""
     db: Session = next(get_db())
-    fixture = crud.get_fixture_by_id(db, request.fixture_id)
+    fixture = fixtures.get_fixture_by_id(db, request.fixture_id)
     if fixture:
         if fixture.remaining_bets < request.quantity:  # type: ignore
             raise HTTPException(status_code=403, detail="No more bets allowed")
@@ -81,7 +81,7 @@ def check_bets(request: request_schemas.RequestShort):
 def check_reserved_bets(request: request_schemas.RequestShort):
     """Check the number of reserved bets."""
     db: Session = next(get_db())
-    db_fixture = crud.get_fixture_by_id(db, request.fixture_id)
+    db_fixture = fixtures.get_fixture_by_id(db, request.fixture_id)
     if db_fixture:
         match request.result:
             case db_fixture.home_team.team.name:
@@ -103,7 +103,7 @@ def check_reserved_bets(request: request_schemas.RequestShort):
 def check_backend_bets(request: request_schemas.Request):
     """Check the number of bets."""
     db: Session = next(get_db())
-    fixture = crud.get_fixture_by_id(db, request.fixture_id)
+    fixture = fixtures.get_fixture_by_id(db, request.fixture_id)
     if fixture:
         if fixture.remaining_bets < request.quantity:  # type: ignore
             raise HTTPException(status_code=403, detail="No more bets allowed")
@@ -118,7 +118,7 @@ def get_deposit_token(request: Request) -> str:
 
 
 def verify_admin(user_id: str, db: Session = Depends(get_db)):
-    user = crud.get_current_user(db, user_id)
+    user = users.get_current_user(db, user_id)
     if not user:
         raise HTTPException(status_code=401, detail="User not found")
     if not user.admin:
