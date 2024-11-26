@@ -1,3 +1,12 @@
+## [1.3.1](https://github.com/benjahuenchunir/arqui-backend/compare/v1.3.0...v1.3.1) (2024-11-26)
+
+
+### Bug Fixes
+
+* add missing env variables ([0291b47](https://github.com/benjahuenchunir/arqui-backend/commit/0291b4707246fea780a9bb907e4ffeefc50d6863))
+* missing . ([aaad980](https://github.com/benjahuenchunir/arqui-backend/commit/aaad980a1701cd5e13e6e6a24139372b6c5e0a86))
+* update New Relic initialization path and improve code formatting ([6590322](https://github.com/benjahuenchunir/arqui-backend/commit/6590322e7a342a4b7d916b42c07329b5404e46a8))
+
 # [1.3.0](https://github.com/benjahuenchunir/arqui-backend/compare/v1.2.3...v1.3.0) (2024-11-26)
 
 
