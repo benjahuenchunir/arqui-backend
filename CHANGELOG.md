@@ -1,3 +1,10 @@
+## [1.2.1](https://github.com/benjahuenchunir/arqui-backend/compare/v1.2.0...v1.2.1) (2024-11-26)
+
+
+### Bug Fixes
+
+* add . ([1de448e](https://github.com/benjahuenchunir/arqui-backend/commit/1de448ed07f4377c8e0777cae2f25421e5832a3d))
+
 # [1.2.0](https://github.com/benjahuenchunir/arqui-backend/compare/v1.1.1...v1.2.0) (2024-11-26)
 
 
