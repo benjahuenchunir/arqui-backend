@@ -21,6 +21,22 @@ if not PATH_ADMIN:
     print("PATH_ADMIN environment variable not set")
     sys.exit(1)
 
+# GET /discount
+@router.get(
+    "/discount",
+    response_model=bool,
+    status_code=status.HTTP_200_OK,
+)
+async def discount(
+    user_id: str,
+    db: Session = Depends(get_db),
+):
+    verify_admin(user_id=user_id, db=db)
+
+    discount = crud.get_discount(db)
+
+    return {"discount": discount}
+
 # POST /discount
 @router.post(
     "/discount",
@@ -38,3 +54,4 @@ async def discount(
     crud.set_discount(db, not discount)
 
     return {"discount": not discount}
+
