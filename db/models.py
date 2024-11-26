@@ -233,3 +233,11 @@ class ProposalModel(Base):
     quantity = Column(Integer)
     group_id = Column(Integer)
     status = Column(String(255), default="pending")
+
+class DiscountModel(Base):
+    """Base class for discounts"""
+
+    __tablename__ = "discounts"
+
+    id = Column(String, primary_key=True, index=True, default="single_row")
+    discount = Column(Boolean, default=False)
