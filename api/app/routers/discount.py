@@ -28,11 +28,8 @@ if not PATH_ADMIN:
     status_code=status.HTTP_200_OK,
 )
 async def discount(
-    user_id: str,
     db: Session = Depends(get_db),
 ):
-    verify_admin(user_id=user_id, db=db)
-
     discount = crud.get_discount(db)
 
     return {"discount": discount}
