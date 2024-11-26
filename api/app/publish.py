@@ -28,7 +28,6 @@ def create_request(
 ):
     """Create a request."""
 
-    print("Publishing", req)
     db_fixture = fixtures.get_fixture_by_id(db, req.fixture_id)
 
     if db_fixture is None:
@@ -39,9 +38,8 @@ def create_request(
     if db_user is None:
         raise HTTPException(status_code=404, detail="User not found")
 
-    print("here")
     published_request = response_schemas.Request(
-        request_id=uuid.uuid4(),  # type: ignore
+        request_id=request_id or uuid.uuid4(),  # type: ignore
         group_id=str(GROUP_ID),
         fixture_id=req.fixture_id,
         league_name=db_fixture.league.name,
@@ -54,7 +52,7 @@ def create_request(
         wallet=not bool(deposit_token),
         seller=0 if not bool(db_user.admin) else int(GROUP_ID) if GROUP_ID else 2,
     )
-    print(published_request)
+
     publish_request(published_request)
 
     return published_request
@@ -151,64 +149,80 @@ def create_offer(db: Session, offer: request_schemas.OfferShort):
     return publish_offer
 
 
-def create_proposal(db: Session, prp: request_schemas.ProposalShort):
+def create_proposal(db: Session, proposal: request_schemas.ProposalShort):
+    """Create and publish a proposal."""
 
-    db_fixture = fixtures.get_fixture_by_id(db, prp.fixture_id)
+    db_fixture = fixtures.get_fixture_by_id(db, proposal.fixture_id)
 
     if db_fixture is None:
         return None
 
-    proposal = response_schemas.Auction(
-        auction_id=prp.auction_id,
+    match proposal.result:
+        case db_fixture.home_team.team.name:
+            if proposal.quantity > db_fixture.reserved_home:  # type: ignore
+                return None
+        case db_fixture.away_team.team.name:
+            if proposal.quantity > db_fixture.reserved_away:  # type: ignore
+                return None
+        case "---":
+            if proposal.quantity > db_fixture.reserved_draw:  # type: ignore
+                return None
+
+    published_proposal = response_schemas.Auction(
+        auction_id=proposal.auction_id,
         proposal_id=uuid.uuid4(),
-        fixture_id=prp.fixture_id,
+        fixture_id=proposal.fixture_id,
         league_name=db_fixture.league.name,
         round=db_fixture.league.round,
-        result=prp.result,
-        quantity=prp.quantity,
-        group_id=GROUP_ID,
+        result=proposal.result,
+        quantity=proposal.quantity,
+        group_id=int(GROUP_ID) if GROUP_ID else 2,
         type="proposal",
     )
 
-    publish_auction(proposal)
+    publish_auction(published_proposal)
 
-    return proposal
+    return published_proposal
 
 
-def create_acceptance(db: Session, prp: request_schemas.Proposal):
-    proposal = response_schemas.Auction(
-        auction_id=uuid.uuid4(),
-        proposal_id="",
-        fixture_id=prp.fixture_id,
-        league_name=prp.league_name,
-        round=prp.round,
-        result=prp.result,
-        quantity=prp.quantity,
-        group_id=GROUP_ID,
+def create_acceptance(proposal: request_schemas.Proposal):
+    """Accept a proposal."""
+
+    published_proposal = response_schemas.Auction(
+        auction_id=proposal.auction_id,
+        proposal_id=proposal.proposal_id,
+        fixture_id=proposal.fixture_id,
+        league_name=proposal.league_name,
+        round=proposal.round,
+        result=proposal.result,
+        quantity=proposal.quantity,
+        group_id=proposal.group_id,
         type="acceptance",
     )
 
-    publish_auction(proposal)
+    publish_auction(published_proposal)
 
-    return proposal
+    return published_proposal
 
 
-def create_rejection(db: Session, prp: request_schemas.Proposal):
-    proposal = response_schemas.Auction(
-        auction_id=uuid.uuid4(),
-        proposal_id="",
-        fixture_id=prp.fixture_id,
-        league_name=prp.league_name,
-        round=prp.round,
-        result=prp.result,
-        quantity=prp.quantity,
-        group_id=GROUP_ID,
+def create_rejection(proposal: request_schemas.Proposal):
+    """Reject a proposal."""
+
+    published_proposal = response_schemas.Auction(
+        auction_id=proposal.auction_id,
+        proposal_id=proposal.proposal_id,
+        fixture_id=proposal.fixture_id,
+        league_name=proposal.league_name,
+        round=proposal.round,
+        result=proposal.result,
+        quantity=proposal.quantity,
+        group_id=proposal.group_id,
         type="rejection",
     )
 
-    publish_auction(proposal)
+    publish_auction(published_proposal)
 
-    return proposal
+    return published_proposal
 
 
 def publish_auction(auction: response_schemas.Auction):

@@ -1,3 +1,5 @@
+"""Auctions router."""
+
 import os
 import sys
 
@@ -5,7 +7,7 @@ from app import publish
 from app.crud import auctions
 from app.dependencies import verify_admin, verify_post_token
 from app.schemas import request_schemas, response_schemas
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from db.database import get_db
@@ -69,19 +71,31 @@ async def get_offers(
     status_code=status.HTTP_201_CREATED,
 )
 async def publish_proposal(
-    auction_id: str,
-    fixture_id: int,
-    result: str,
-    quantity: int,
+    proposal: request_schemas.ProposalShort,
+    db: Session = Depends(get_db),
+):
+    """Publish a proposal."""
+
+    verify_admin(user_id=proposal.uid, db=db)
+
+    return publish.create_proposal(db, proposal)
+
+
+# GET /proposals
+@router.get(
+    "/proposals",
+    response_model=list[response_schemas.Proposal],
+    status_code=status.HTTP_200_OK,
+)
+async def get_proposals(
     user_id: str,
     db: Session = Depends(get_db),
 ):
+    """Get all proposals."""
+
     verify_admin(user_id=user_id, db=db)
 
-    proposal = request_schemas.ProposalShort(
-        auction_id=auction_id, fixture_id=fixture_id, result=result, quantity=quantity
-    )
-    return publish.create_proposal(db, prp=proposal)
+    return auctions.get_proposals(db)
 
 
 # POST /accept
@@ -94,10 +108,18 @@ async def accept_proposal(
     request: request_schemas.ProposalRequest,
     db: Session = Depends(get_db),
 ):
+    """Accept a proposal."""
+
     verify_admin(user_id=request.user_id, db=db)
+
+    print(request.proposal_id)
+
     proposal = auctions.get_proposal(db, request.proposal_id)
 
-    return publish.create_acceptance(db, proposal)
+    if not proposal:
+        raise HTTPException(status_code=404, detail="Proposal not found")
+
+    return publish.create_acceptance(proposal)
 
 
 # POST /reject
@@ -110,13 +132,16 @@ async def reject_proposal(
     request: request_schemas.ProposalRequest,
     db: Session = Depends(get_db),
 ):
+    """Reject a proposal."""
+
     verify_admin(user_id=request.user_id, db=db)
+
     proposal = auctions.get_proposal(db, request.proposal_id)
 
     if not proposal:
         raise HTTPException(status_code=404, detail="Proposal not found")
 
-    return publish.create_rejection(db, proposal)
+    return publish.create_rejection(proposal)
 
 
 #########################################################
@@ -135,46 +160,31 @@ async def upsert_auction(
     db: Session = Depends(get_db),
     token: None = Depends(verify_post_token),
 ):
+    """Upsert an auction."""
     if auction.type == "offer":
         return auctions.upsert_offer(db, auction)
     elif auction.type == "proposal":
         return auctions.upsert_proposal(db, auction)
+    else:
+        raise HTTPException(status_code=400, detail="Invalid type")
 
 
 # PATCH /
 @router.patch(
-    "/", response_model=response_schemas.Auction, status_code=status.HTTP_200_OK
+    "/",
+    # response_model=response_schemas.Auction,
+    status_code=status.HTTP_201_CREATED,
 )
 async def update_auction(
-    auction_id: int,
     auction: request_schemas.Auction,
-    request: Request,
     db: Session = Depends(get_db),
     token: None = Depends(verify_post_token),
 ):
+    """Update an auction."""
+
     if auction.type == "acceptance":
-        proposal = auctions.get_proposal(db, auction.proposal_id)
-        offer = auctions.get_offer(db, auction.auction_id)
-
-        proposal.status = "accepted"
-        offer.status = "sold"
-
-        auctions.update_proposal(db, auction.proposal_id, proposal)
-        auctions.update_offer(db, auction_id, offer)
-
-        for proposal in auctions.get_offer_proposals(db, auction.auction_id):
-            if proposal.status == "pending":
-                proposal.status = "rejected"
-                auctions.update_proposal(db, proposal.id, proposal)
-
-        return auction
-
+        auctions.handle_acceptance(db, auction)
     elif auction.type == "rejection":
-
-        proposal = auctions.get_proposal(db, auction.proposal_id)
-
-        proposal.status = "rejected"
-
-        auctions.update_proposal(db, auction.proposal_id, auction)
-
-        return auction
+        auctions.handle_rejection(db, auction)
+    else:
+        raise HTTPException(status_code=400, detail="Invalid type")
