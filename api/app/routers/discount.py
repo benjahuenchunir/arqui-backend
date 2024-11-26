@@ -1,10 +1,9 @@
 import os
 import sys
 
-from app import crud, publish
-from app.dependencies import verify_admin, verify_post_token
-from app.schemas import request_schemas, response_schemas
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from app import crud
+from app.dependencies import verify_admin
+from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 
 from db.database import get_db
