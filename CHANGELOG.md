@@ -1,3 +1,24 @@
+# [1.2.0](https://github.com/benjahuenchunir/arqui-backend/compare/v1.1.1...v1.2.0) (2024-11-26)
+
+
+### Bug Fixes
+
+* add new-relic to deploy ([e1c4e28](https://github.com/benjahuenchunir/arqui-backend/commit/e1c4e2816c50f153f664ebd2ecc45e9c2b78e0c1))
+* compose ([9e7b4b4](https://github.com/benjahuenchunir/arqui-backend/commit/9e7b4b411160fa06d425be7e9f16ecba1b7cfafd))
+
+
+### Features
+
+* add api gateway to terraform ([5d1190a](https://github.com/benjahuenchunir/arqui-backend/commit/5d1190a237dca45981babb3362263eb71cc1744d))
+* add endpoint to retrieve offers and update auction schemas ([0ecb974](https://github.com/benjahuenchunir/arqui-backend/commit/0ecb974f9b7f3c6d393ea66e01b4ad6f6e727d84))
+* add endpoint to retrieve tradeable fixtures with pagination ([3a7d130](https://github.com/benjahuenchunir/arqui-backend/commit/3a7d130a43cb092708dc0ca7e7b92878347f1522))
+* add new-relic to deploy ([dd91f83](https://github.com/benjahuenchunir/arqui-backend/commit/dd91f8396179c825e80f534b90b4c9946968bba2))
+* add proposal management with creation, acceptance, and rejection endpoints ([1aaefb4](https://github.com/benjahuenchunir/arqui-backend/commit/1aaefb4d6c1a63b566bb73bfd6091545f3a041ec))
+* enhance auction offer management with fixture validation and user deletion ([ce04045](https://github.com/benjahuenchunir/arqui-backend/commit/ce04045af806bff212798b027d5c1fd1ee142af5))
+* implement discount management with retrieval and toggle endpoints ([497c12d](https://github.com/benjahuenchunir/arqui-backend/commit/497c12d06f762f83a56ec876c9d8157269a18560))
+* offer publishing ([0212663](https://github.com/benjahuenchunir/arqui-backend/commit/021266301908e159c93f6b06edf0f5f63fe5db0e))
+* remove obsolete crud operations ([3c40fd5](https://github.com/benjahuenchunir/arqui-backend/commit/3c40fd592af516f12dfa5a11cab38a03523fcfa9))
+
 ## [1.1.1](https://github.com/benjahuenchunir/arqui-backend/compare/v1.1.0...v1.1.1) (2024-11-24)
 
 
