@@ -4,7 +4,7 @@
 
 import os
 
-from app.routers import auctions, fixtures
+from app.routers import auctions, discounts, fixtures
 from app.routers import requests as requestRouter
 from app.routers import tests, users
 from fastapi import FastAPI
@@ -42,6 +42,7 @@ app.include_router(requestRouter.router)
 app.include_router(fixtures.router)
 app.include_router(tests.router)
 app.include_router(auctions.router)
+app.include_router(discounts.router)
 
 
 @app.get("/favicon.ico", include_in_schema=False)
