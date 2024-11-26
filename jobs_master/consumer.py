@@ -9,7 +9,7 @@ if os.getenv("ENV") != "production":
 
 # Inicializa New Relic
 from newrelic import agent
-agent.initialize('/newrelic.ini')  # Ajusta la ruta si es necesario
+agent.initialize('./newrelic.ini')  # Ajusta la ruta si es necesario
 
 celery_app = Celery(
     __name__,
